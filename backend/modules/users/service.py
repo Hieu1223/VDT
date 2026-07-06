@@ -1,0 +1,103 @@
+from datetime import datetime, timezone
+
+from common.enums import EventDomain, EventType, TECHNICIAN_ROLES, UserStatus
+from common.errors import ConflictError, NotFoundError, AppError
+from common.events import emit_event
+from common.security import hash_password, verify_password
+from persistence.db import db, new_id, serialize_doc
+
+ADMIN_ASSIGNABLE_STATUS_EVENTS = {
+    UserStatus.ACTIVE.value: EventType.USER_ACTIVATED.value,
+    UserStatus.SUSPENDED.value: EventType.USER_SUSPENDED.value,
+    UserStatus.DEACTIVATED.value: EventType.USER_DEACTIVATED.value,
+}
+
+
+def _clean(user: dict) -> dict:
+    user = serialize_doc(user)
+    user.pop("password_hash", None)
+    return user
+
+
+async def update_profile(user: dict, payload) -> dict:
+    updates = {k: v for k, v in payload.model_dump(exclude_unset=True).items() if v is not None}
+    if not updates:
+        return user
+    updates["updated_at"] = datetime.now(timezone.utc)
+    await db.users.update_one({"id": user["id"]}, {"$set": updates})
+    fresh = await db.users.find_one({"id": user["id"]})
+    return _clean(fresh)
+
+
+async def change_password(user: dict, payload) -> None:
+    full = await db.users.find_one({"id": user["id"]})
+    if not verify_password(payload.current_password, full["password_hash"]):
+        raise AppError("Current password is incorrect")
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"password_hash": hash_password(payload.new_password), "updated_at": datetime.now(timezone.utc)}},
+    )
+
+
+async def list_users(role: str | None = None, status: str | None = None) -> list[dict]:
+    query = {}
+    if role:
+        query["role"] = role
+    if status:
+        query["status"] = status
+    cursor = db.users.find(query).sort("created_at", -1)
+    return [_clean(u) async for u in cursor]
+
+
+async def list_technicians() -> list[dict]:
+    cursor = db.users.find({"role": {"$in": list(TECHNICIAN_ROLES)}, "status": UserStatus.ACTIVE.value})
+    return [_clean(u) async for u in cursor]
+
+
+async def admin_create_user(bus, admin: dict, payload) -> dict:
+    existing = await db.users.find_one({"username": payload.username.lower()})
+    if existing:
+        raise ConflictError("Username is already taken")
+    now = datetime.now(timezone.utc)
+    user = {
+        "id": new_id(),
+        "username": payload.username.lower(),
+        "password_hash": hash_password(payload.password),
+        "full_name": payload.full_name,
+        "email": payload.email,
+        "role": payload.role,
+        "status": UserStatus.ACTIVE.value,
+        "online": False,
+        "created_at": now,
+        "updated_at": now,
+        "last_login_at": None,
+    }
+    doc = dict(user)
+    doc["_id"] = user["id"]
+    await db.users.insert_one(doc)
+    await emit_event(
+        bus, EventDomain.USER.value, EventType.USER_ACTIVATED.value,
+        {"user_id": user["id"], "username": user["username"], "role": user["role"], "created_by_admin": admin["id"]},
+        actor_id=admin["id"],
+    )
+    return _clean(user)
+
+
+async def update_user_status(bus, admin: dict, user_id: str, new_status: str) -> dict:
+    target = await db.users.find_one({"id": user_id})
+    if not target:
+        raise NotFoundError("User not found")
+    if new_status not in ADMIN_ASSIGNABLE_STATUS_EVENTS:
+        raise AppError("Invalid status")
+
+    await db.users.update_one(
+        {"id": user_id}, {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc)}}
+    )
+    event_type = ADMIN_ASSIGNABLE_STATUS_EVENTS[new_status]
+    await emit_event(
+        bus, EventDomain.USER.value, event_type,
+        {"user_id": user_id, "username": target["username"], "status": new_status, "reviewed_by": admin["id"]},
+        actor_id=admin["id"],
+    )
+    fresh = await db.users.find_one({"id": user_id})
+    return _clean(fresh)

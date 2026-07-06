@@ -1,0 +1,22 @@
+.queue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-6);
+}
+
+.queue-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  transition: var(--transition-base);
+}
+.queue-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+.queue-card-header { display: flex; align-items: center; justify-content: space-between; }
+.queue-card-description { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: var(--text-sm); }
+.queue-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: var(--space-2); font-size: var(--text-sm); }
+
+.request-status-pending { background: var(--color-priority-medium-bg); color: var(--color-priority-medium-text); }
+.request-status-approved { background: #D1FAE5; color: var(--color-success); }
+.request-status-rejected { background: var(--color-priority-high-bg); color: var(--color-sla-breach); }
+.request-status-returned { background: #F4F4F5; color: var(--color-text-muted); }

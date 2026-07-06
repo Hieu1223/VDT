@@ -1,0 +1,46 @@
+.ticket-subject-link { color: var(--color-brand-primary); font-weight: 600; }
+.ticket-subject-link:hover { text-decoration: underline; }
+
+.new-ticket-form { max-width: 640px; display: flex; flex-direction: column; gap: var(--space-2); }
+.new-ticket-form-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); }
+
+/* Ticket detail */
+.ticket-detail-badges { display: flex; align-items: center; gap: var(--space-3); }
+.ticket-detail-grid { display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-6); margin: var(--space-6) 0; }
+@media (max-width: 900px) { .ticket-detail-grid { grid-template-columns: 1fr; } }
+
+.ticket-detail-description { margin: var(--space-3) 0 var(--space-6); white-space: pre-wrap; }
+.ticket-detail-meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); margin-bottom: var(--space-6); }
+.ticket-detail-meta p { font-size: var(--text-sm); font-weight: 600; margin-top: 2px; }
+.ticket-detail-tags { margin-bottom: var(--space-6); display: flex; flex-direction: column; gap: var(--space-2); }
+
+.ticket-detail-note {
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-4);
+}
+.ticket-detail-note-success { background: #D1FAE5; color: #065F46; }
+.ticket-detail-note-danger { background: var(--color-priority-high-bg); color: var(--color-priority-high-text); }
+
+.ticket-detail-actions { margin-top: var(--space-6); display: flex; flex-direction: column; gap: var(--space-3); border-top: 1px solid var(--color-border-light); padding-top: var(--space-4); }
+.ticket-lock-warning { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); }
+.ticket-action-group { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.ticket-inline-form { display: flex; flex-direction: column; gap: var(--space-2); max-width: 480px; }
+
+.ticket-detail-sla { align-self: flex-start; display: flex; flex-direction: column; gap: var(--space-4); }
+.sla-row { display: flex; flex-direction: column; gap: 2px; padding: var(--space-3); border-radius: var(--radius-sm); background: var(--color-bg-surface-hover); }
+.sla-row-flag { align-self: flex-start; margin-top: var(--space-1); font-size: var(--text-xs); font-weight: 700; padding: 2px var(--space-2); border-radius: var(--radius-full); background: var(--color-priority-high-bg); color: var(--color-sla-breach); }
+.sla-row-flag-ok { background: #D1FAE5; color: var(--color-success); }
+.sla-row-warning { background: var(--color-priority-medium-bg); }
+.sla-row-breach { background: var(--color-priority-high-bg); }
+
+.ticket-detail-chat { margin-top: var(--space-8); }
+.ticket-detail-chat h3 { margin-bottom: var(--space-3); }
+
+/* CSAT */
+.csat-page { display: flex; justify-content: center; padding-top: var(--space-16); }
+.csat-card { max-width: 480px; width: 100%; text-align: center; display: flex; flex-direction: column; gap: var(--space-4); }
+.csat-stars { display: flex; justify-content: center; gap: var(--space-2); color: var(--color-border-heavy); }
+.csat-star-active { color: var(--color-sla-warning); }
+.csat-submitted { display: flex; flex-direction: column; gap: var(--space-3); align-items: center; }

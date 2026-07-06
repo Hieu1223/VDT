@@ -1,0 +1,90 @@
+.notification-bell-wrapper { position: relative; }
+
+.notification-bell-trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-main);
+  transition: var(--transition-base);
+}
+.notification-bell-trigger:hover { background: var(--color-bg-surface-hover); }
+
+.notification-bell-shake { animation: bellShake 0.6s ease-in-out; }
+@keyframes bellShake {
+  0%, 100% { transform: rotate(0); }
+  20% { transform: rotate(-14deg); }
+  40% { transform: rotate(12deg); }
+  60% { transform: rotate(-8deg); }
+  80% { transform: rotate(6deg); }
+}
+
+.notification-bell-count {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: var(--radius-full);
+  background: var(--color-sla-breach);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notification-bell-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 320px;
+  max-height: 420px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-glass);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.notification-bell-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.notification-bell-list {
+  overflow-y: auto;
+  max-height: 360px;
+}
+
+.notification-bell-empty {
+  padding: var(--space-6);
+  text-align: center;
+  font-size: var(--text-sm);
+}
+
+.notification-bell-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border-light);
+  transition: var(--transition-base);
+}
+.notification-bell-item:hover { background: var(--color-bg-surface-hover); }
+.notification-bell-item-unread { background: #F0F5FF; }
+.notification-bell-item-title { font-size: var(--text-sm); font-weight: 600; }
+.notification-bell-item-body { font-size: var(--text-xs); color: var(--color-text-muted); }

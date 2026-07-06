@@ -1,0 +1,99 @@
+/* Kanban */
+.kanban-board {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 260px;
+  gap: var(--space-4);
+  overflow-x: auto;
+  padding-bottom: var(--space-4);
+}
+.kanban-column {
+  background: var(--color-bg-main);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 200px;
+}
+.kanban-column-header { display: flex; align-items: center; justify-content: space-between; }
+.kanban-column-count {
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-full);
+  padding: 2px var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+.kanban-column-cards { display: flex; flex-direction: column; gap: var(--space-3); }
+.kanban-card {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  transition: var(--transition-base);
+}
+.kanban-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.kanban-card h4 { font-size: var(--text-sm); }
+.kanban-card-footer { font-size: var(--text-xs); }
+.kanban-card-tags { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+
+/* Timeline */
+.timeline-list { display: flex; flex-direction: column; gap: var(--space-1); max-height: 70vh; overflow-y: auto; }
+.timeline-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-1);
+  border-bottom: 1px solid var(--color-border-light);
+  font-size: var(--text-sm);
+}
+.timeline-item-key { color: var(--color-brand-primary); font-weight: 600; min-width: 220px; }
+.timeline-item-time { min-width: 180px; }
+.timeline-item-ticket { font-size: var(--text-xs); }
+
+/* All tickets */
+.admin-filters { display: flex; gap: var(--space-3); margin-bottom: var(--space-6); flex-wrap: wrap; align-items: center; }
+.admin-filters .input { max-width: 240px; }
+.admin-filters .select { max-width: 200px; }
+
+/* Users */
+.admin-create-user-form { margin-bottom: var(--space-6); }
+.admin-create-user-row { display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: center; }
+.admin-create-user-row .input, .admin-create-user-row .select { max-width: 200px; }
+.admin-user-actions { display: flex; gap: var(--space-2); }
+
+/* Tags */
+.tags-create-form { display: flex; gap: var(--space-3); margin-bottom: var(--space-6); max-width: 480px; align-items: center; }
+.tags-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--space-3); }
+.tags-chip-card { display: flex; align-items: center; justify-content: space-between; padding: var(--space-3); }
+
+/* Monitor */
+.monitor-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4); margin-bottom: var(--space-8); }
+.monitor-stat-card { display: flex; flex-direction: column; gap: var(--space-2); }
+.monitor-stat-value { font-family: var(--font-heading); font-size: var(--text-3xl); font-weight: 800; }
+.monitor-stat-card-danger .monitor-stat-value { color: var(--color-sla-breach); }
+.monitor-section-title { margin: var(--space-8) 0 var(--space-4); }
+.monitor-pending-list { display: flex; flex-direction: column; gap: var(--space-4); margin-bottom: var(--space-4); }
+.monitor-pending-card { display: flex; flex-direction: column; gap: var(--space-3); }
+.monitor-pending-header { display: flex; justify-content: space-between; }
+.monitor-pending-form { display: flex; flex-direction: column; gap: var(--space-2); }
+.monitor-pending-actions { display: flex; gap: var(--space-2); }
+
+/* Config */
+.config-section { margin-bottom: var(--space-6); }
+.config-algorithm-options { display: flex; gap: var(--space-4); }
+.config-algorithm-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-transform: capitalize;
+  transition: var(--transition-base);
+}
+.config-algorithm-option-active { border-color: var(--color-brand-primary); background: #F0F5FF; }

@@ -1,0 +1,48 @@
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 900px) {
+  .auth-page { grid-template-columns: 1fr; }
+  .auth-hero { display: none; }
+}
+
+.auth-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--space-16);
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-family: var(--font-heading);
+  font-weight: 700;
+  margin-bottom: var(--space-12);
+}
+
+.auth-panel h1 { margin-bottom: var(--space-2); }
+.auth-panel > p.text-muted { margin-bottom: var(--space-8); }
+
+.auth-submit { width: 100%; padding: var(--space-3); margin-top: var(--space-2); }
+
+.auth-footer-link { margin-top: var(--space-6); font-size: var(--text-sm); text-align: center; }
+.auth-footer-link a { color: var(--color-brand-primary); font-weight: 600; }
+
+.auth-hero {
+  background-image: url("https://images.pexels.com/photos/2747599/pexels-photo-2747599.jpeg");
+  background-size: cover;
+  background-position: center;
+}
+
+.pending-icon {
+  color: var(--color-brand-primary);
+  margin-bottom: var(--space-4);
+}
