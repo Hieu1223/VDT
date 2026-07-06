@@ -1,0 +1,162 @@
+{
+  "theme": {
+    "name": "Swiss Brutalist Utility",
+    "archetype": "4 (Swiss & High-Contrast)",
+    "mode": "Light",
+    "description": "An authoritative, function-first interface built for dense data manipulation and clear operational signaling. It relies purely on high-contrast colors, strict CSS grids, and generous negative space rather than decorative elements. Everything is custom CSS with CSS properties.",
+    "core_principles": [
+      "No Component Libraries: Absolutely no Tailwind, no Bootstrap, no Shadcn. Use vanilla CSS and CSS variables only.",
+      "Density with Breathability: Use tight padding inside data cells but wide margins between macro sections.",
+      "Semantic Color Only: Color is reserved exclusively for primary actions (Blue) and SLA status/alerts (Red/Yellow/Green). Grayscale for everything else.",
+      "Optical Alignment: Ensure badges, icons, and text are optically centered in raw CSS."
+    ]
+  },
+  "typography": {
+    "font_families": {
+      "heading": "Manrope, system-ui, sans-serif",
+      "body": "'IBM Plex Sans', system-ui, sans-serif",
+      "mono": "'IBM Plex Mono', monospace"
+    },
+    "scale": {
+      "--text-xs": "0.75rem",
+      "--text-sm": "0.875rem",
+      "--text-base": "1rem",
+      "--text-lg": "1.125rem",
+      "--text-xl": "1.25rem",
+      "--text-2xl": "1.5rem",
+      "--text-3xl": "2rem",
+      "--text-4xl": "2.5rem"
+    },
+    "weights": {
+      "light": "300",
+      "regular": "400",
+      "medium": "500",
+      "bold": "700"
+    },
+    "rules": {
+      "h1": "font-family: var(--font-heading); font-size: var(--text-3xl); font-weight: bold; letter-spacing: -0.02em; line-height: 1.1;",
+      "h2": "font-family: var(--font-heading); font-size: var(--text-2xl); font-weight: bold; letter-spacing: -0.01em; line-height: 1.2;",
+      "body": "font-family: var(--font-body); font-size: var(--text-base); line-height: 1.5; color: var(--color-text-main);",
+      "labels": "font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; font-weight: medium; color: var(--color-text-muted);"
+    }
+  },
+  "colors": {
+    "background": {
+      "main": "#F7F7F9",
+      "surface": "#FFFFFF",
+      "surface_hover": "#F1F1F4"
+    },
+    "text": {
+      "main": "#0A0A0B",
+      "muted": "#52525B",
+      "inverse": "#FFFFFF"
+    },
+    "border": {
+      "light": "#E4E4E7",
+      "heavy": "#D4D4D8",
+      "focus": "#003BFF"
+    },
+    "brand": {
+      "primary": "#003BFF",
+      "primary_hover": "#002BCC"
+    },
+    "semantic": {
+      "sla_breach": "#E11D48",
+      "sla_warning": "#F59E0B",
+      "success": "#10B981",
+      "info": "#3B82F6"
+    }
+  },
+  "spacing_and_sizing": {
+    "scale": {
+      "--space-1": "0.25rem",
+      "--space-2": "0.5rem",
+      "--space-3": "0.75rem",
+      "--space-4": "1rem",
+      "--space-6": "1.5rem",
+      "--space-8": "2rem",
+      "--space-12": "3rem",
+      "--space-16": "4rem"
+    },
+    "radius": {
+      "--radius-sm": "4px",
+      "--radius-md": "8px",
+      "--radius-lg": "12px",
+      "--radius-full": "9999px"
+    },
+    "shadows": {
+      "--shadow-sm": "0 1px 2px rgba(0,0,0,0.05)",
+      "--shadow-md": "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)",
+      "--shadow-glass": "0 8px 32px rgba(0, 0, 0, 0.08)"
+    }
+  },
+  "components": {
+    "instructions": "NO TAILWIND OR SHADCN. Create a global 'variables.css' and 'reset.css'. For components, use plain scoped '.css' or CSS modules.",
+    "buttons": {
+      "primary": "bg: var(--brand-primary); color: white; radius: var(--radius-sm); padding: var(--space-2) var(--space-4); border: none; font-weight: 500;",
+      "secondary": "bg: transparent; color: var(--text-main); border: 1px solid var(--border-heavy); radius: var(--radius-sm); padding: var(--space-2) var(--space-4);",
+      "hover_state": "Transform: translateY(-1px); Box-shadow: var(--shadow-sm); Transition: all 0.2s ease."
+    },
+    "cards": {
+      "base": "bg: var(--background-surface); border: 1px solid var(--border-light); radius: var(--radius-md); padding: var(--space-6);",
+      "kanban_column": "bg: var(--background-main); border: none; radius: var(--radius-md); padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3);"
+    },
+    "badges": {
+      "base": "padding: var(--space-1) var(--space-2); border-radius: var(--radius-full); font-size: var(--text-xs); font-weight: 600;",
+      "priority_high": "bg: #FFE4E6; color: var(--semantic-sla_breach);",
+      "priority_medium": "bg: #FEF3C7; color: var(--semantic-sla_warning);",
+      "priority_low": "bg: #D1FAE5; color: var(--semantic-success);"
+    },
+    "inputs": {
+      "base": "border: 1px solid var(--border-light); padding: var(--space-2) var(--space-3); radius: var(--radius-sm); width: 100%; font-family: var(--font-body);",
+      "focus": "border-color: var(--border-focus); outline: 2px solid rgba(0, 59, 255, 0.2);"
+    },
+    "tables": {
+      "wrapper": "width: 100%; border-collapse: collapse; text-align: left;",
+      "header": "border-bottom: 2px solid var(--border-heavy); color: var(--text-muted); font-size: var(--text-sm); padding: var(--space-3);",
+      "cell": "border-bottom: 1px solid var(--border-light); padding: var(--space-3) var(--space-4); vertical-align: middle;"
+    }
+  },
+  "layout": {
+    "app_shell": "CSS Grid layout. 250px sidebar (fixed), 1fr main content area. Header height 64px.",
+    "dashboard_grid": "display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-6);",
+    "chat_room": "display: flex; flex-direction: column; height: calc(100vh - 64px). Messages area: flex-grow: 1; overflow-y: auto. Input area: sticky bottom, border-top: 1px solid var(--border-light)."
+  },
+  "motion": {
+    "transitions": "transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);",
+    "bell_ring": "Use CSS keyframes for a slight rotation (shake) when a new WebSocket message arrives.",
+    "chat_bubble": "Animation: slideUp 0.3s ease-out forwards;"
+  },
+  "accessibility": {
+    "focus_rings": "Mandatory. Do not use 'outline: none' without a fallback focus indicator. Use --border-focus color.",
+    "contrast": "SLA colors must meet WCAG 4.5:1 on their backgrounds. Avoid placing white text directly on Warning Yellow.",
+    "test_ids": "ALL interactive elements MUST have 'data-testid' attributes (e.g., 'data-testid=\"login-submit-button\"')."
+  },
+  "media": {
+    "images": {
+      "login_cover": {
+        "url": "https://images.pexels.com/photos/2747599/pexels-photo-2747599.jpeg",
+        "description": "Minimalist concrete architecture. Use as the hero/cover image on the left/right split screen of the Login and Register pages."
+      },
+      "brand_logo": {
+        "url": "https://images.unsplash.com/photo-1776870467525-fe80f919d6ae",
+        "description": "Four white squares grid on mint background. Use as the company logo in the sidebar and auth pages."
+      },
+      "avatar_female": {
+        "url": "https://images.pexels.com/photos/31869537/pexels-photo-31869537.jpeg",
+        "description": "Professional headshot portrait. Use as a placeholder avatar for female technician/user profiles."
+      },
+      "avatar_male": {
+        "url": "https://images.pexels.com/photos/26872232/pexels-photo-26872232.jpeg",
+        "description": "Professional headshot portrait. Use as a placeholder avatar for male admin/technician profiles."
+      }
+    }
+  },
+  "instructions_to_main_agent": [
+    "CRITICAL: Do NOT use Tailwind CSS. Do NOT install Shadcn UI, Radix, MUI, or Bootstrap.",
+    "Use plain CSS variables mapped to standard CSS files (`reset.css`, `variables.css`, `layout.css`, `components.css`).",
+    "Structure the UI via vanilla React (JSX/TSX), standard CSS Grid/Flexbox, and React Router.",
+    "Implement WebSocket real-time updates natively or with 'socket.io-client'.",
+    "Enforce `data-testid` on all buttons, forms, and clickable cards."
+  ]
+}
