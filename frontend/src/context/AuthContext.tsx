@@ -1,7 +1,9 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { authApi } from "@/api/endpoints";
+import { authApi, usersApi } from "@/api/endpoints";
 import { clearTokens, getAccessToken, setTokens } from "@/api/client";
 import type { User } from "@/types";
+
+const HEARTBEAT_INTERVAL_MS = 20000;
 
 interface AuthContextValue {
   user: User | null;
@@ -35,6 +37,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     refreshUser().finally(() => setLoading(false));
   }, [refreshUser]);
+
+  // Presence is fully automatic: a heartbeat every 20s (TTL 45s server-side) is
+  // the sole signal that keeps a user "online" - there is no manual toggle.
+  useEffect(() => {
+    if (!user) return;
+    usersApi.heartbeat().catch(() => {});
+    const interval = setInterval(() => {
+      usersApi.heartbeat().catch(() => {});
+    }, HEARTBEAT_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const login = useCallback(async (username: string, password: string) => {
     const { data } = await authApi.login(username, password);

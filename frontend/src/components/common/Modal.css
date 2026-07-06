@@ -1,0 +1,31 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 11, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  animation: fadeIn 0.15s ease-out forwards;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 520px;
+  max-height: 85vh;
+  overflow-y: auto;
+  margin: var(--space-4);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.modal-close-button {
+  padding: var(--space-1);
+}
+
+.modal-body { display: flex; flex-direction: column; gap: var(--space-2); }

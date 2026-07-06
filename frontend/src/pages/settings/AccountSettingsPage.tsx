@@ -8,7 +8,6 @@ export default function AccountSettingsPage() {
   const { user, refreshUser } = useAuth();
   const [fullName, setFullName] = useState(user?.full_name || "");
   const [email, setEmail] = useState(user?.email || "");
-  const [online, setOnline] = useState(user?.online || false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [profileMsg, setProfileMsg] = useState("");
@@ -21,7 +20,7 @@ export default function AccountSettingsPage() {
     setProfileMsg("");
     setProfileError("");
     try {
-      await usersApi.updateProfile({ full_name: fullName, email, online });
+      await usersApi.updateProfile({ full_name: fullName, email });
       await refreshUser();
       setProfileMsg("Profile updated.");
     } catch (err: any) {
@@ -66,9 +65,10 @@ export default function AccountSettingsPage() {
             <label className="label" htmlFor="settings-email">Email</label>
             <input id="settings-email" type="email" className="input" data-testid="settings-email-input" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
-          <label className="settings-toggle">
-            <input type="checkbox" data-testid="settings-online-toggle" checked={online} onChange={(e) => setOnline(e.target.checked)} />
-            <span>Available online (eligible for auto-assignment)</span>
+          <label className="settings-toggle settings-presence-note">
+            <span className="text-muted">
+              Online status is automatic - you&apos;re shown as online while this app is open (no manual toggle needed).
+            </span>
           </label>
           <button type="submit" className="btn btn-primary" data-testid="settings-profile-save-button">Save profile</button>
         </form>

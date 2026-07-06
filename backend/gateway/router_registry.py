@@ -31,6 +31,7 @@ for r in (
     notifications_router,
     csat_router,
     filters_router,
+    calendar_router,
     kanban_router,
     timeline_router,
     monitor_router,

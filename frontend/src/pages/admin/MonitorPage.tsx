@@ -59,6 +59,8 @@ export default function MonitorPage() {
           <StatCard label="Currently locked" value={stats.currently_locked} testId="monitor-stat-locked" />
           <StatCard label="First-response breaches" value={stats.sla_first_response_breached} danger testId="monitor-stat-fr-breach" />
           <StatCard label="Resolve breaches" value={stats.sla_resolve_breached} danger testId="monitor-stat-resolve-breach" />
+          <StatCard label="SLA compliance rate" value={stats.sla_compliance_rate != null ? `${stats.sla_compliance_rate}%` : "-"} testId="monitor-stat-sla-compliance" />
+          <StatCard label="Avg CSAT score" value={stats.avg_csat_score != null ? `${stats.avg_csat_score} / 5` : "-"} testId="monitor-stat-avg-csat" />
         </div>
       )}
 
@@ -114,9 +116,9 @@ export default function MonitorPage() {
   );
 }
 
-function StatCard({ label, value, danger, testId }: { label: string; value: number; danger?: boolean; testId: string }) {
+function StatCard({ label, value, danger, testId }: { label: string; value: number | string; danger?: boolean; testId: string }) {
   return (
-    <div className={`card monitor-stat-card ${danger && value > 0 ? "monitor-stat-card-danger" : ""}`} data-testid={testId}>
+    <div className={`card monitor-stat-card ${danger && Number(value) > 0 ? "monitor-stat-card-danger" : ""}`} data-testid={testId}>
       <span className="label">{label}</span>
       <span className="monitor-stat-value">{value}</span>
     </div>

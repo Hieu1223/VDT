@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { PlusCircle } from "lucide-react";
-import { ticketsApi } from "@/api/endpoints";
+import { filtersApi, ticketsApi } from "@/api/endpoints";
 import PriorityBadge from "@/components/badges/PriorityBadge";
 import EmptyState from "@/components/common/EmptyState";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
@@ -10,13 +10,29 @@ import "@/pages/tickets/Tickets.css";
 
 export default function TicketListPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [tagOptions, setTagOptions] = useState<{ name: string; color: string }[]>([]);
+  const [filters, setFilters] = useState({ tag: "", date_from: "", date_to: "" });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    ticketsApi.mine().then(({ data }) => setTickets(data)).finally(() => setLoading(false));
+    filtersApi.ticketOptions().then(({ data }) => setTagOptions(data.tags));
   }, []);
 
-  if (loading) return <LoadingSpinner fullPage />;
+  const load = () => {
+    setLoading(true);
+    const params: any = {};
+    if (filters.tag) params.tag = filters.tag;
+    if (filters.date_from) params.date_from = filters.date_from;
+    if (filters.date_to) params.date_to = filters.date_to;
+    ticketsApi.mine(params).then(({ data }) => setTickets(data)).finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.tag, filters.date_from, filters.date_to]);
+
+  if (loading && tickets.length === 0) return <LoadingSpinner fullPage />;
 
   return (
     <div className="page" data-testid="ticket-list-page">
@@ -28,6 +44,15 @@ export default function TicketListPage() {
         <Link to="/tickets/new" className="btn btn-primary" data-testid="ticket-list-new-ticket-link">
           <PlusCircle size={16} /> New Ticket
         </Link>
+      </div>
+
+      <div className="admin-filters card">
+        <select className="select" value={filters.tag} data-testid="ticket-list-tag-filter" onChange={(e) => setFilters((f) => ({ ...f, tag: e.target.value }))}>
+          <option value="">All tags</option>
+          {tagOptions.map((t) => <option key={t.name} value={t.name}>{t.name}</option>)}
+        </select>
+        <input type="date" className="input" data-testid="ticket-list-date-from-input" value={filters.date_from} onChange={(e) => setFilters((f) => ({ ...f, date_from: e.target.value }))} />
+        <input type="date" className="input" data-testid="ticket-list-date-to-input" value={filters.date_to} onChange={(e) => setFilters((f) => ({ ...f, date_to: e.target.value }))} />
       </div>
 
       {tickets.length === 0 ? (

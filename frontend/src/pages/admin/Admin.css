@@ -41,6 +41,8 @@
 .kanban-card-tags { display: flex; flex-wrap: wrap; gap: var(--space-1); }
 
 /* Timeline */
+.timeline-mode-toggle { display: flex; gap: var(--space-2); }
+.timeline-calendar-table th, .timeline-calendar-table td { white-space: nowrap; }
 .timeline-list { display: flex; flex-direction: column; gap: var(--space-1); max-height: 70vh; overflow-y: auto; }
 .timeline-item {
   display: flex;
@@ -97,3 +99,35 @@
   transition: var(--transition-base);
 }
 .config-algorithm-option-active { border-color: var(--color-brand-primary); background: #F0F5FF; }
+
+/* Priority matrix */
+.priority-matrix-table th, .priority-matrix-table td { text-align: center; }
+.priority-matrix-table select { min-width: 80px; }
+
+/* Business calendar */
+.business-calendar-days { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-4); }
+.business-calendar-day {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  transition: var(--transition-base);
+}
+.business-calendar-day-active { border-color: var(--color-brand-primary); background: #F0F5FF; }
+.business-calendar-hours { display: flex; gap: var(--space-4); flex-wrap: wrap; }
+.business-calendar-hours .field { max-width: 200px; }
+.business-calendar-holiday-add { display: flex; gap: var(--space-2); max-width: 360px; margin-bottom: var(--space-2); }
+.business-calendar-holidays { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-4); }
+.business-calendar-holiday-chip { display: flex; align-items: center; gap: var(--space-2); }
+.business-calendar-holiday-chip button { background: none; border: none; cursor: pointer; font-size: var(--text-base); line-height: 1; color: inherit; }
+
+/* Range slider filters (SLA%, CSAT rating range) */
+.range-slider-field { display: flex; flex-direction: column; gap: var(--space-1); min-width: 220px; }
+.range-slider-field input[type="range"] { width: 100%; accent-color: var(--color-brand-primary); }
+.range-slider-value { font-size: var(--text-xs); color: var(--color-text-muted); font-family: var(--font-mono); }
+.range-slider-dual { display: flex; align-items: center; gap: var(--space-2); }
+
+/* Modal-based Create User */
+.users-page-header-actions { display: flex; gap: var(--space-3); }

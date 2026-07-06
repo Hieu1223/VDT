@@ -1,6 +1,6 @@
 import { apiClient } from "@/api/client";
 import type {
-  CsatSurvey, EscalationRequest, Message, Notification, Tag, Ticket, TimelineEvent, User,
+  BusinessCalendar, CsatSurvey, EscalationRequest, Message, Notification, Tag, Ticket, TimelineEvent, User,
 } from "@/types";
 
 // ---- Auth ----
@@ -14,12 +14,14 @@ export const authApi = {
 
 // ---- Users ----
 export const usersApi = {
-  updateProfile: (payload: Partial<{ full_name: string; email: string; online: boolean }>) =>
+  updateProfile: (payload: Partial<{ full_name: string; email: string }>) =>
     apiClient.patch<User>("/users/me", payload),
   changePassword: (current_password: string, new_password: string) =>
     apiClient.post("/users/me/change-password", { current_password, new_password }),
+  heartbeat: () => apiClient.post("/users/me/heartbeat"),
   technicians: () => apiClient.get<User[]>("/users/technicians"),
-  adminList: (params?: { role?: string; status?: string }) => apiClient.get<User[]>("/users", { params }),
+  adminList: (params?: { role?: string; status?: string; search?: string; online?: boolean; date_from?: string; date_to?: string }) =>
+    apiClient.get<User[]>("/users", { params }),
   adminCreate: (payload: { username: string; password: string; full_name: string; email?: string; role: string }) =>
     apiClient.post<User>("/users", payload),
   adminUpdateStatus: (userId: string, status: string) => apiClient.patch<User>(`/users/${userId}/status`, { status }),
@@ -27,19 +29,28 @@ export const usersApi = {
 
 // ---- Tickets ----
 export const ticketsApi = {
-  create: (payload: { subject: string; description: string; category: string; impact: string; urgency: string }) =>
+  create: (payload: { subject: string; description: string; category: string; impact: string; urgency: string; requester_id?: string }) =>
     apiClient.post<Ticket>("/tickets", payload),
-  mine: () => apiClient.get<Ticket[]>("/tickets"),
-  queue: () => apiClient.get<Ticket[]>("/tickets/queue"),
-  all: (params?: { status?: string; priority?: string; assignee_id?: string; search?: string }) =>
+  mine: (params?: { tag?: string; date_from?: string; date_to?: string }) => apiClient.get<Ticket[]>("/tickets", { params }),
+  queue: (params?: { tag?: string; date_from?: string; date_to?: string; sla_min_pct?: number }) =>
+    apiClient.get<Ticket[]>("/tickets/queue", { params }),
+  all: (params?: { status?: string; priority?: string; assignee_id?: string; search?: string; tag?: string; date_from?: string; date_to?: string; sla_min_pct?: number }) =>
     apiClient.get<Ticket[]>("/tickets/all", { params }),
   get: (id: string) => apiClient.get<Ticket>(`/tickets/${id}`),
   resolve: (id: string, resolution_note: string) => apiClient.post<Ticket>(`/tickets/${id}/resolve`, { resolution_note }),
   reject: (id: string, rejection_reason: string) => apiClient.post<Ticket>(`/tickets/${id}/reject`, { rejection_reason }),
   priorityMatrix: () => apiClient.get("/tickets/config/priority-matrix"),
+  updatePriorityMatrix: (impact: string, urgency: string, priority: string) =>
+    apiClient.patch(`/tickets/config/priority-matrix/${impact}/${urgency}`, { priority }),
   slaPolicies: () => apiClient.get("/tickets/config/sla-policies"),
   updateSlaPolicy: (priority: string, payload: { first_response_minutes: number; resolve_minutes: number }) =>
     apiClient.patch(`/tickets/config/sla-policies/${priority}`, payload),
+};
+
+// ---- Business calendar ----
+export const calendarApi = {
+  get: () => apiClient.get<BusinessCalendar>("/calendar"),
+  update: (payload: BusinessCalendar) => apiClient.put<BusinessCalendar>("/calendar", payload),
 };
 
 // ---- Locks ----
@@ -106,6 +117,8 @@ export const csatApi = {
   get: (ticketId: string) => apiClient.get<CsatSurvey>(`/csat/${ticketId}`),
   submit: (ticketId: string, rating: number, comment?: string) =>
     apiClient.post<CsatSurvey>(`/csat/${ticketId}`, { rating, comment }),
+  adminList: (params?: { status?: string; rating_min?: number; rating_max?: number; technician_id?: string; date_from?: string; date_to?: string }) =>
+    apiClient.get<CsatSurvey[]>("/csat", { params }),
 };
 
 // ---- Filters ----

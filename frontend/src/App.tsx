@@ -28,6 +28,7 @@ import UsersPage from "@/pages/admin/UsersPage";
 import TagsPage from "@/pages/admin/TagsPage";
 import MonitorPage from "@/pages/admin/MonitorPage";
 import ConfigPage from "@/pages/admin/ConfigPage";
+import AdminCsatPage from "@/pages/admin/AdminCsatPage";
 
 function HomeRedirect() {
   const { user, loading } = useAuth();
@@ -65,10 +66,12 @@ export default function App() {
                 <Route path="/admin/kanban" element={<ProtectedRoute allowedRoles={["admin"]}><KanbanPage /></ProtectedRoute>} />
                 <Route path="/admin/timeline" element={<ProtectedRoute allowedRoles={["admin"]}><TimelinePage /></ProtectedRoute>} />
                 <Route path="/admin/tickets" element={<ProtectedRoute allowedRoles={["admin"]}><AllTicketsPage /></ProtectedRoute>} />
+                <Route path="/admin/tickets/new" element={<ProtectedRoute allowedRoles={["admin"]}><NewTicketPage /></ProtectedRoute>} />
                 <Route path="/admin/users" element={<ProtectedRoute allowedRoles={["admin"]}><UsersPage /></ProtectedRoute>} />
                 <Route path="/admin/tags" element={<ProtectedRoute allowedRoles={["admin"]}><TagsPage /></ProtectedRoute>} />
                 <Route path="/admin/monitor" element={<ProtectedRoute allowedRoles={["admin"]}><MonitorPage /></ProtectedRoute>} />
                 <Route path="/admin/config" element={<ProtectedRoute allowedRoles={["admin"]}><ConfigPage /></ProtectedRoute>} />
+                <Route path="/admin/csat" element={<ProtectedRoute allowedRoles={["admin"]}><AdminCsatPage /></ProtectedRoute>} />
               </Route>
 
               <Route path="*" element={<Navigate to="/" replace />} />

@@ -128,11 +128,22 @@ export interface CsatSurvey {
   technician_id: string;
   technician_username?: string;
   requester_id: string;
+  requester_username?: string;
+  ticket_subject?: string;
   rating?: number | null;
   comment?: string | null;
   status: "pending" | "submitted";
   created_at: string;
   submitted_at?: string | null;
+}
+
+export interface BusinessCalendar {
+  business_days: number[];
+  start_hour: number;
+  start_minute: number;
+  end_hour: number;
+  end_minute: number;
+  holidays: string[];
 }
 
 export interface TimelineEvent {
