@@ -4,6 +4,7 @@ from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from common.enums import UserStatus
+from common.presence import enrich_online
 from common.security import decode_token
 from common.ws.manager import manager as ws_manager
 from persistence.db import db, serialize_doc
@@ -30,7 +31,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials | None = De
     user.pop("password_hash", None)
     if user["status"] != UserStatus.ACTIVE.value:
         raise HTTPException(status_code=403, detail=f"Account is {user['status']}")
-    return user
+    return enrich_online(user)
 
 
 def require_roles(*roles: str):

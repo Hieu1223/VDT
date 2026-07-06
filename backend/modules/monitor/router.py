@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from common.enums import UserRole
 from gateway.deps import require_roles
@@ -8,8 +8,8 @@ router = APIRouter(prefix="/monitor", tags=["monitor"], dependencies=[Depends(re
 
 
 @router.get("/users")
-async def users():
-    return await service.monitor_users()
+async def users(online: bool | None = Query(default=None)):
+    return await service.monitor_users(online=online)
 
 
 @router.get("/tickets")

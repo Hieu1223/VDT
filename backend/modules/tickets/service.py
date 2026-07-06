@@ -1,9 +1,10 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
+from common.business_calendar import add_business_minutes, get_business_calendar
 from common.enums import EventDomain, EventType, TicketStatus, UserRole
 from common.errors import ForbiddenError, NotFoundError, ConflictError
 from common.events import emit_event
-from modules.tickets.sla_seed import get_sla_policy, resolve_priority
+from modules.tickets.sla_seed import get_sla_policy, resolve_priority_from_db
 from persistence.db import db, new_id, serialize_doc
 
 TECHNICIAN_OR_ADMIN = {UserRole.TECHNICIAN_HUMAN.value, UserRole.TECHNICIAN_VIRTUAL.value, UserRole.ADMIN.value}
@@ -22,9 +23,42 @@ def can_view_ticket(user: dict, ticket: dict) -> bool:
     return True
 
 
-async def create_ticket(bus, requester: dict, payload) -> dict:
-    priority = resolve_priority(payload.impact, payload.urgency)
+def _build_date_query(date_from: str | None, date_to: str | None) -> dict:
+    q: dict = {}
+    if date_from:
+        q["$gte"] = datetime.fromisoformat(date_from)
+    if date_to:
+        q["$lte"] = datetime.fromisoformat(date_to)
+    return q
+
+
+def _as_aware(value):
+    if isinstance(value, str):
+        value = datetime.fromisoformat(value)
+    if value and value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value
+
+
+def sla_elapsed_pct(ticket: dict) -> float | None:
+    """% of the resolve-SLA window elapsed so far (used for the 'SLA at-risk' slider filter)."""
+    sla = ticket.get("sla")
+    if not sla or not sla.get("resolve_due_at"):
+        return None
+    due = _as_aware(sla["resolve_due_at"])
+    created = _as_aware(ticket["created_at"])
+    window = (due - created).total_seconds()
+    if window <= 0:
+        return None
+    elapsed = (datetime.now(timezone.utc) - created).total_seconds()
+    return max(0.0, (elapsed / window) * 100)
+
+
+async def create_ticket(bus, actor: dict, payload, on_behalf_of: dict | None = None) -> dict:
+    requester = on_behalf_of or actor
+    priority = await resolve_priority_from_db(payload.impact, payload.urgency)
     policy = await get_sla_policy(priority)
+    calendar = await get_business_calendar()
     now = datetime.now(timezone.utc)
 
     ticket = {
@@ -44,8 +78,8 @@ async def create_ticket(bus, requester: dict, payload) -> dict:
         "previous_status": None,
         "escalation_pending": False,
         "sla": {
-            "first_response_due_at": now + timedelta(minutes=policy["first_response_minutes"]),
-            "resolve_due_at": now + timedelta(minutes=policy["resolve_minutes"]),
+            "first_response_due_at": add_business_minutes(now, policy["first_response_minutes"], calendar),
+            "resolve_due_at": add_business_minutes(now, policy["resolve_minutes"], calendar),
             "first_responded_at": None,
             "resolved_at": None,
             "first_response_breached": False,
@@ -66,7 +100,7 @@ async def create_ticket(bus, requester: dict, payload) -> dict:
     await emit_event(
         bus, EventDomain.TICKET.value, EventType.TICKET_CREATED.value,
         {"ticket_id": ticket["id"], "subject": ticket["subject"], "priority": priority, "requester_id": requester["id"]},
-        actor_id=requester["id"], ticket_id=ticket["id"],
+        actor_id=actor["id"], ticket_id=ticket["id"],
     )
     return ticket
 
@@ -85,13 +119,28 @@ async def get_ticket_for_viewer(user: dict, ticket_id: str) -> dict:
     return strip_sla_if_unauthorized(ticket, user["role"])
 
 
-async def list_my_tickets(user: dict) -> list[dict]:
-    cursor = db.tickets.find({"requester_id": user["id"]}).sort("created_at", -1)
+async def list_my_tickets(user: dict, tag: str | None = None, date_from: str | None = None, date_to: str | None = None) -> list[dict]:
+    query: dict = {"requester_id": user["id"]}
+    if tag:
+        query["tags"] = tag
+    date_query = _build_date_query(date_from, date_to)
+    if date_query:
+        query["created_at"] = date_query
+    cursor = db.tickets.find(query).sort("created_at", -1)
     return [strip_sla_if_unauthorized(serialize_doc(t), user["role"]) async for t in cursor]
 
 
-async def list_all_tickets(status: str | None = None, priority: str | None = None, assignee_id: str | None = None, search: str | None = None) -> list[dict]:
-    query = {}
+async def list_all_tickets(
+    status: str | None = None,
+    priority: str | None = None,
+    assignee_id: str | None = None,
+    search: str | None = None,
+    tag: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    sla_min_pct: float | None = None,
+) -> list[dict]:
+    query: dict = {}
     if status:
         query["status"] = status
     if priority:
@@ -100,17 +149,40 @@ async def list_all_tickets(status: str | None = None, priority: str | None = Non
         query["assignee_id"] = assignee_id
     if search:
         query["subject"] = {"$regex": search, "$options": "i"}
+    if tag:
+        query["tags"] = tag
+    date_query = _build_date_query(date_from, date_to)
+    if date_query:
+        query["created_at"] = date_query
     cursor = db.tickets.find(query).sort("created_at", -1)
-    return [serialize_doc(t) async for t in cursor]
+    tickets = [serialize_doc(t) async for t in cursor]
+    if sla_min_pct is not None:
+        tickets = [t for t in tickets if (pct := sla_elapsed_pct(t)) is not None and pct >= sla_min_pct]
+    return tickets
 
 
-async def list_queue(technician: dict) -> list[dict]:
+async def list_queue(
+    technician: dict,
+    tag: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    sla_min_pct: float | None = None,
+) -> list[dict]:
     """Actionable tickets: assigned to me, or unassigned & open, excluding resolved/rejected/closed."""
-    cursor = db.tickets.find({
+    query: dict = {
         "status": {"$in": [TicketStatus.NEW.value, TicketStatus.ASSIGNED.value, TicketStatus.IN_PROGRESS.value, TicketStatus.ESCALATED.value]},
         "$or": [{"assignee_id": technician["id"]}, {"assignee_id": None}],
-    }).sort("created_at", 1)
-    return [serialize_doc(t) async for t in cursor]
+    }
+    if tag:
+        query["tags"] = tag
+    date_query = _build_date_query(date_from, date_to)
+    if date_query:
+        query["created_at"] = date_query
+    cursor = db.tickets.find(query).sort("created_at", 1)
+    tickets = [serialize_doc(t) async for t in cursor]
+    if sla_min_pct is not None:
+        tickets = [t for t in tickets if (pct := sla_elapsed_pct(t)) is not None and pct >= sla_min_pct]
+    return tickets
 
 
 async def set_assignee(bus, ticket_id: str, assignee: dict, actor_id: str | None = None) -> dict:

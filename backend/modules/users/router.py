@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 
 from common.enums import UserRole
+from common.ws.manager import manager as ws_manager
 from gateway.deps import get_bus, get_current_user, require_roles
 from modules.users import service
 from modules.users.schemas import AdminCreateUserRequest, ChangePasswordRequest, UpdateProfileRequest, UpdateUserStatusRequest
@@ -19,14 +20,31 @@ async def change_my_password(payload: ChangePasswordRequest, user: dict = Depend
     return {"detail": "password updated"}
 
 
+@router.post("/me/heartbeat")
+async def heartbeat(user: dict = Depends(get_current_user)):
+    became_online = await service.heartbeat(user["id"])
+    if became_online:
+        await ws_manager.broadcast_to_roles(
+            ["admin"], {"kind": "presence", "data": {"user_id": user["id"], "username": user["username"], "online": True}}
+        )
+    return {"online": True}
+
+
 @router.get("/technicians")
 async def technicians(user: dict = Depends(get_current_user)):
     return await service.list_technicians()
 
 
 @router.get("", dependencies=[Depends(require_roles(UserRole.ADMIN.value))])
-async def admin_list_users(role: str | None = Query(default=None), status: str | None = Query(default=None)):
-    return await service.list_users(role=role, status=status)
+async def admin_list_users(
+    role: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+    search: str | None = Query(default=None),
+    online: bool | None = Query(default=None),
+    date_from: str | None = Query(default=None),
+    date_to: str | None = Query(default=None),
+):
+    return await service.list_users(role=role, status=status, search=search, online=online, date_from=date_from, date_to=date_to)
 
 
 @router.post("", dependencies=[Depends(require_roles(UserRole.ADMIN.value))])

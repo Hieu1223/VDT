@@ -27,18 +27,27 @@ def resolve_priority(impact: str, urgency: str) -> str:
     return PRIORITY_MATRIX.get((Level(impact), Level(urgency)), Priority.P3).value
 
 
+async def resolve_priority_from_db(impact: str, urgency: str) -> str:
+    doc_id = f"{impact}_{urgency}"
+    row = await db.priority_matrix.find_one({"id": doc_id})
+    if row:
+        return row["priority"]
+    return resolve_priority(impact, urgency)
+
+
 async def seed_priority_matrix_and_sla() -> None:
+    # $setOnInsert so admin edits made via PATCH survive a backend restart.
     for (impact, urgency), priority in PRIORITY_MATRIX.items():
         doc_id = f"{impact.value}_{urgency.value}"
         await db.priority_matrix.update_one(
             {"id": doc_id},
-            {"$set": {"id": doc_id, "_id": doc_id, "impact": impact.value, "urgency": urgency.value, "priority": priority.value}},
+            {"$setOnInsert": {"id": doc_id, "_id": doc_id, "impact": impact.value, "urgency": urgency.value, "priority": priority.value}},
             upsert=True,
         )
     for priority, policy in DEFAULT_SLA_POLICIES.items():
         await db.sla_policies.update_one(
             {"id": priority.value},
-            {"$set": {"id": priority.value, "_id": priority.value, "priority": priority.value, **policy}},
+            {"$setOnInsert": {"id": priority.value, "_id": priority.value, "priority": priority.value, **policy}},
             upsert=True,
         )
 

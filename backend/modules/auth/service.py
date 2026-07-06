@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from common.enums import EventDomain, EventType, UserRole, UserStatus
 from common.errors import ConflictError, ForbiddenError, UnauthorizedError
 from common.events import emit_event
+from common.presence import enrich_online, presence
 from common.security import create_access_token, create_refresh_token, decode_token, hash_password, verify_password
 from persistence.db import db, new_id, serialize_doc
 
@@ -53,9 +54,9 @@ async def authenticate_user(bus, username: str, password: str) -> dict:
         raise ForbiddenError(f"account_{user['status']}")
 
     now = datetime.now(timezone.utc)
-    await db.users.update_one({"id": user["id"]}, {"$set": {"last_login_at": now, "online": True, "updated_at": now}})
+    await db.users.update_one({"id": user["id"]}, {"$set": {"last_login_at": now, "updated_at": now}})
     user["last_login_at"] = now
-    user["online"] = True
+    presence.touch(user["id"])
 
     await emit_event(
         bus, EventDomain.USER.value, EventType.USER_ONLINE.value,
@@ -65,7 +66,7 @@ async def authenticate_user(bus, username: str, password: str) -> dict:
 
     user = serialize_doc(user)
     user.pop("password_hash")
-    return user
+    return enrich_online(user)
 
 
 def issue_tokens(user: dict) -> dict:
@@ -94,13 +95,12 @@ async def refresh_access_token(refresh_token: str) -> dict:
         "access_token": create_access_token(user["id"], user["role"], user["username"]),
         "refresh_token": create_refresh_token(user["id"]),
         "token_type": "bearer",
-        "user": user,
+        "user": enrich_online(user),
     }
 
 
 async def logout_user(bus, user: dict) -> None:
-    now = datetime.now(timezone.utc)
-    await db.users.update_one({"id": user["id"]}, {"$set": {"online": False, "updated_at": now}})
+    presence.mark_offline(user["id"])
     await emit_event(
         bus, EventDomain.USER.value, EventType.USER_OFFLINE.value,
         {"user_id": user["id"], "username": user["username"]},

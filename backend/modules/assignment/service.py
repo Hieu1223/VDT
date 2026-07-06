@@ -1,6 +1,7 @@
 import logging
 
 from common.enums import TECHNICIAN_ROLES, UserStatus
+from common.presence import presence
 from modules.assignment.algorithms import ALGORITHMS
 from modules.tickets.service import get_ticket_or_404, set_assignee
 from persistence.db import db
@@ -31,12 +32,13 @@ async def list_algorithms() -> list[str]:
 
 
 async def get_available_technicians() -> list[dict]:
-    cursor = db.users.find({"role": {"$in": list(TECHNICIAN_ROLES)}, "status": UserStatus.ACTIVE.value, "online": True})
-    online = [t async for t in cursor]
+    cursor = db.users.find({"role": {"$in": list(TECHNICIAN_ROLES)}, "status": UserStatus.ACTIVE.value})
+    all_active = [t async for t in cursor]
+    online_ids = presence.online_ids()
+    online = [t for t in all_active if t["id"] in online_ids]
     if online:
         return online
-    cursor = db.users.find({"role": {"$in": list(TECHNICIAN_ROLES)}, "status": UserStatus.ACTIVE.value})
-    return [t async for t in cursor]
+    return all_active
 
 
 async def assign_ticket_automatically(bus, ticket_id: str) -> dict | None:

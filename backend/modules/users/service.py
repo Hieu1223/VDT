@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from common.enums import EventDomain, EventType, TECHNICIAN_ROLES, UserStatus
 from common.errors import ConflictError, NotFoundError, AppError
 from common.events import emit_event
+from common.presence import presence
 from common.security import hash_password, verify_password
 from persistence.db import db, new_id, serialize_doc
 
@@ -16,6 +17,7 @@ ADMIN_ASSIGNABLE_STATUS_EVENTS = {
 def _clean(user: dict) -> dict:
     user = serialize_doc(user)
     user.pop("password_hash", None)
+    user["online"] = presence.is_online(user["id"])
     return user
 
 
@@ -39,14 +41,42 @@ async def change_password(user: dict, payload) -> None:
     )
 
 
-async def list_users(role: str | None = None, status: str | None = None) -> list[dict]:
-    query = {}
+async def heartbeat(user_id: str) -> bool:
+    """Records a presence heartbeat. Returns True if the user just came online."""
+    return presence.touch(user_id)
+
+
+async def list_users(
+    role: str | None = None,
+    status: str | None = None,
+    search: str | None = None,
+    online: bool | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+) -> list[dict]:
+    query: dict = {}
     if role:
         query["role"] = role
     if status:
         query["status"] = status
+    if search:
+        query["$or"] = [
+            {"username": {"$regex": search, "$options": "i"}},
+            {"full_name": {"$regex": search, "$options": "i"}},
+        ]
+    if date_from or date_to:
+        date_query: dict = {}
+        if date_from:
+            date_query["$gte"] = datetime.fromisoformat(date_from)
+        if date_to:
+            date_query["$lte"] = datetime.fromisoformat(date_to)
+        query["created_at"] = date_query
+
     cursor = db.users.find(query).sort("created_at", -1)
-    return [_clean(u) async for u in cursor]
+    users = [_clean(u) async for u in cursor]
+    if online is not None:
+        users = [u for u in users if u["online"] == online]
+    return users
 
 
 async def list_technicians() -> list[dict]:

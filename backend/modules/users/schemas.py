@@ -5,7 +5,6 @@ from pydantic import BaseModel, Field
 class UpdateProfileRequest(BaseModel):
     full_name: Optional[str] = None
     email: Optional[str] = None
-    online: Optional[bool] = None
 
 
 class ChangePasswordRequest(BaseModel):
