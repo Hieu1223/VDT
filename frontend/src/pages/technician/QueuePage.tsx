@@ -5,6 +5,7 @@ import PriorityBadge from "@/components/badges/PriorityBadge";
 import LockBadge from "@/components/badges/LockBadge";
 import EmptyState from "@/components/common/EmptyState";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
+import { RangeSlider } from "@/components/common/RangeSlider";
 import { useAuth } from "@/context/AuthContext";
 import type { Ticket } from "@/types";
 import "@/pages/technician/Technician.css";
@@ -55,12 +56,7 @@ export default function QueuePage() {
         <input type="date" className="input" data-testid="queue-date-to-input" value={filters.date_to} onChange={(e) => setFilters((f) => ({ ...f, date_to: e.target.value }))} />
         <div className="range-slider-field">
           <label className="label">SLA elapsed &ge; {filters.sla_min_pct}%</label>
-          <input
-            type="range" min={0} max={100} step={5}
-            value={filters.sla_min_pct}
-            data-testid="queue-sla-slider"
-            onChange={(e) => setFilters((f) => ({ ...f, sla_min_pct: Number(e.target.value) }))}
-          />
+          <RangeSlider min={0} max={100} step={5} value={[filters.sla_min_pct]} testId="queue-sla-slider" onValueChange={([v]) => setFilters((f) => ({ ...f, sla_min_pct: v }))} />
         </div>
       </div>
 

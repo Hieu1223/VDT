@@ -40,16 +40,30 @@ export default function MessageBubble({ message, isMine, onReply, onEdit, onDele
             </div>
           </div>
         ) : (
-          <p className="message-bubble-content">{message.content}</p>
+          message.content && <p className="message-bubble-content">{message.content}</p>
         )}
 
         {!isDeleted && message.attachments.length > 0 && (
           <div className="message-bubble-attachments">
-            {message.attachments.map((a) => (
-              <a key={a.url} href={a.url} target="_blank" rel="noopener noreferrer" className="message-bubble-attachment" data-testid={`message-attachment-${message.id}`}>
-                <Paperclip size={14} /> {a.filename}
-              </a>
-            ))}
+            {message.attachments.map((a) => {
+              if (a.content_type?.startsWith("image/")) {
+                return (
+                  <a key={a.url} href={a.url} target="_blank" rel="noopener noreferrer" className="message-bubble-media-link" data-testid={`message-attachment-${message.id}`}>
+                    <img src={a.url} alt={a.filename} className="message-bubble-image" />
+                  </a>
+                );
+              }
+              if (a.content_type?.startsWith("video/")) {
+                return (
+                  <video key={a.url} src={a.url} controls className="message-bubble-video" data-testid={`message-attachment-${message.id}`} />
+                );
+              }
+              return (
+                <a key={a.url} href={a.url} target="_blank" rel="noopener noreferrer" className="message-bubble-attachment" data-testid={`message-attachment-${message.id}`}>
+                  <Paperclip size={14} /> {a.filename}
+                </a>
+              );
+            })}
           </div>
         )}
 

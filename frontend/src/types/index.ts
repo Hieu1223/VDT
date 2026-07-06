@@ -156,3 +156,10 @@ export interface TimelineEvent {
   ticket_id?: string | null;
   created_at: string;
 }
+
+export interface Paginated<T> {
+  items: T[];
+  total: number;
+  page: number;
+  page_size: number;
+}

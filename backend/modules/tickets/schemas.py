@@ -9,7 +9,6 @@ class CreateTicketRequest(BaseModel):
     category: str = Field(min_length=1, max_length=60)
     impact: str = Field(description="high, medium, or low")
     urgency: str = Field(description="high, medium, or low")
-    requester_id: Optional[str] = Field(default=None, description="Admin-only: create this ticket on behalf of another user")
 
 
 class ResolveTicketRequest(BaseModel):

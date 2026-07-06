@@ -29,6 +29,7 @@ import TagsPage from "@/pages/admin/TagsPage";
 import MonitorPage from "@/pages/admin/MonitorPage";
 import ConfigPage from "@/pages/admin/ConfigPage";
 import AdminCsatPage from "@/pages/admin/AdminCsatPage";
+import MyCsatPage from "@/pages/tickets/MyCsatPage";
 
 function HomeRedirect() {
   const { user, loading } = useAuth();
@@ -57,6 +58,7 @@ export default function App() {
                 <Route path="/tickets/new" element={<ProtectedRoute allowedRoles={["employee"]}><NewTicketPage /></ProtectedRoute>} />
                 <Route path="/tickets/:id" element={<ProtectedRoute><TicketDetailPage /></ProtectedRoute>} />
                 <Route path="/csat/:id" element={<ProtectedRoute allowedRoles={["employee"]}><CsatPage /></ProtectedRoute>} />
+                <Route path="/csat" element={<ProtectedRoute allowedRoles={["employee"]}><MyCsatPage /></ProtectedRoute>} />
 
                 <Route path="/queue" element={<ProtectedRoute allowedRoles={["technician_human", "technician_virtual"]}><QueuePage /></ProtectedRoute>} />
                 <Route path="/my-escalations" element={<ProtectedRoute allowedRoles={["technician_human", "technician_virtual"]}><MyEscalationsPage /></ProtectedRoute>} />

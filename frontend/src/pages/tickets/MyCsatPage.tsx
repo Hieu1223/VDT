@@ -1,19 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { Download } from "lucide-react";
 import { Link } from "react-router-dom";
 import { csatApi, usersApi } from "@/api/endpoints";
 import EmptyState from "@/components/common/EmptyState";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { Pagination } from "@/components/common/Pagination";
 import { RangeSlider } from "@/components/common/RangeSlider";
-import { exportToCsv } from "@/lib/csv";
 import type { CsatSurvey, User } from "@/types";
 import "@/pages/admin/Admin.css";
 
 type RatingMode = "exact" | "range";
 const PAGE_SIZE = 20;
 
-export default function AdminCsatPage() {
+export default function MyCsatPage() {
   const [surveys, setSurveys] = useState<CsatSurvey[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -50,64 +48,43 @@ export default function AdminCsatPage() {
 
   useEffect(() => { setPage(1); }, [filters.status, filters.technician_id, filters.date_from, filters.date_to, filters.ratingExact, filters.ratingRange, ratingMode]);
 
-  const handleExport = () => {
-    exportToCsv("csat-surveys", surveys, [
-      { key: "ticket_subject", label: "Ticket" },
-      { key: "requester_username", label: "Requester" },
-      { key: "technician_username", label: "Technician" },
-      { key: "rating", label: "Rating" },
-      { key: "comment", label: "Comment" },
-      { key: "status", label: "Status" },
-      { key: "submitted_at", label: "Submitted At" },
-    ]);
-  };
-
   return (
-    <div className="page" data-testid="admin-csat-page">
+    <div className="page" data-testid="my-csat-page">
       <div className="page-header">
         <div>
-          <h1>CSAT Surveys</h1>
-          <p className="text-muted">Every customer satisfaction survey, with filters across rating, technician, and date.</p>
+          <h1>My CSAT Surveys</h1>
+          <p className="text-muted">Satisfaction surveys for tickets you&apos;ve submitted.</p>
         </div>
-        <button className="btn btn-secondary" data-testid="admin-csat-export-csv-button" onClick={handleExport} disabled={surveys.length === 0}>
-          <Download size={16} /> Export CSV
-        </button>
       </div>
 
       <div className="admin-filters card">
-        <select className="select" value={filters.status} data-testid="admin-csat-status-filter" onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}>
+        <select className="select" value={filters.status} data-testid="my-csat-status-filter" onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}>
           <option value="">All statuses</option>
           <option value="pending">Pending</option>
           <option value="submitted">Submitted</option>
         </select>
-        <select className="select" value={filters.technician_id} data-testid="admin-csat-technician-filter" onChange={(e) => setFilters((f) => ({ ...f, technician_id: e.target.value }))}>
+        <select className="select" value={filters.technician_id} data-testid="my-csat-technician-filter" onChange={(e) => setFilters((f) => ({ ...f, technician_id: e.target.value }))}>
           <option value="">All technicians</option>
           {technicians.map((t) => <option key={t.id} value={t.id}>{t.full_name} ({t.username})</option>)}
         </select>
-        <input type="date" className="input" data-testid="admin-csat-date-from-input" value={filters.date_from} onChange={(e) => setFilters((f) => ({ ...f, date_from: e.target.value }))} />
-        <input type="date" className="input" data-testid="admin-csat-date-to-input" value={filters.date_to} onChange={(e) => setFilters((f) => ({ ...f, date_to: e.target.value }))} />
-
+        <input type="date" className="input" data-testid="my-csat-date-from-input" value={filters.date_from} onChange={(e) => setFilters((f) => ({ ...f, date_from: e.target.value }))} />
+        <input type="date" className="input" data-testid="my-csat-date-to-input" value={filters.date_to} onChange={(e) => setFilters((f) => ({ ...f, date_to: e.target.value }))} />
         <div className="range-slider-field">
           <div className="range-slider-dual">
             <label className="label">Rating</label>
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm"
-              data-testid="admin-csat-rating-mode-toggle"
-              onClick={() => setRatingMode((m) => (m === "exact" ? "range" : "exact"))}
-            >
+            <button type="button" className="btn btn-ghost btn-sm" data-testid="my-csat-rating-mode-toggle" onClick={() => setRatingMode((m) => (m === "exact" ? "range" : "exact"))}>
               {ratingMode === "exact" ? "Switch to range" : "Switch to exact"}
             </button>
           </div>
           {ratingMode === "exact" ? (
-            <select className="select" value={filters.ratingExact} data-testid="admin-csat-rating-exact-select" onChange={(e) => setFilters((f) => ({ ...f, ratingExact: Number(e.target.value) }))}>
+            <select className="select" value={filters.ratingExact} data-testid="my-csat-rating-exact-select" onChange={(e) => setFilters((f) => ({ ...f, ratingExact: Number(e.target.value) }))}>
               <option value={0}>Any rating</option>
               {[1, 2, 3, 4, 5].map((r) => <option key={r} value={r}>{r} star{r > 1 ? "s" : ""}</option>)}
             </select>
           ) : (
             <>
               <span className="range-slider-value">Min: {filters.ratingRange[0]} - Max: {filters.ratingRange[1]}</span>
-              <RangeSlider min={1} max={5} step={1} value={filters.ratingRange} testId="admin-csat-rating-range-slider" onValueChange={(v) => setFilters((f) => ({ ...f, ratingRange: v }))} />
+              <RangeSlider min={1} max={5} step={1} value={filters.ratingRange} testId="my-csat-rating-range-slider" onValueChange={(v) => setFilters((f) => ({ ...f, ratingRange: v }))} />
             </>
           )}
         </div>
@@ -116,18 +93,17 @@ export default function AdminCsatPage() {
       {loading ? (
         <LoadingSpinner fullPage />
       ) : surveys.length === 0 ? (
-        <EmptyState title="No CSAT surveys match your filters" testId="admin-csat-empty" />
+        <EmptyState title="No CSAT surveys yet" testId="my-csat-empty" />
       ) : (
         <div className="table-wrapper card">
-          <table className="data-table" data-testid="admin-csat-table">
+          <table className="data-table" data-testid="my-csat-table">
             <thead>
-              <tr><th>Ticket</th><th>Requester</th><th>Technician</th><th>Rating</th><th>Comment</th><th>Status</th><th>Submitted</th></tr>
+              <tr><th>Ticket</th><th>Technician</th><th>Rating</th><th>Comment</th><th>Status</th><th>Submitted</th></tr>
             </thead>
             <tbody>
               {surveys.map((s) => (
-                <tr key={s.id} data-testid={`admin-csat-row-${s.id}`}>
+                <tr key={s.id} data-testid={`my-csat-row-${s.id}`}>
                   <td><Link to={`/tickets/${s.ticket_id}`} className="ticket-subject-link">{s.ticket_subject || s.ticket_id.slice(0, 8)}</Link></td>
-                  <td>{s.requester_username || "-"}</td>
                   <td>{s.technician_username || "-"}</td>
                   <td className="mono">{s.rating != null ? `${s.rating} / 5` : "-"}</td>
                   <td>{s.comment || "-"}</td>
@@ -137,7 +113,7 @@ export default function AdminCsatPage() {
               ))}
             </tbody>
           </table>
-          <Pagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} testId="admin-csat-pagination" />
+          <Pagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} testId="my-csat-pagination" />
         </div>
       )}
     </div>

@@ -8,7 +8,7 @@ from modules.tickets import service
 from modules.tickets.schemas import (
     CreateTicketRequest, RejectTicketRequest, ResolveTicketRequest, UpdatePriorityMatrixRequest, UpdateSlaPolicyRequest,
 )
-from persistence.db import db, serialize_doc
+from persistence.db import db
 
 router = APIRouter(prefix="/tickets", tags=["tickets"])
 
@@ -46,13 +46,7 @@ async def update_sla_policy(priority: str, payload: UpdateSlaPolicyRequest):
 
 @router.post("", dependencies=[Depends(require_roles(UserRole.EMPLOYEE.value, UserRole.ADMIN.value))])
 async def create_ticket(payload: CreateTicketRequest, actor: dict = Depends(get_current_user), bus=Depends(get_bus)):
-    on_behalf_of = None
-    if actor["role"] == UserRole.ADMIN.value and payload.requester_id:
-        target = await db.users.find_one({"id": payload.requester_id})
-        if not target:
-            raise NotFoundError("Requester not found")
-        on_behalf_of = serialize_doc(target)
-    return await service.create_ticket(bus, actor, payload, on_behalf_of=on_behalf_of)
+    return await service.create_ticket(bus, actor, payload)
 
 
 @router.get("")
@@ -86,10 +80,13 @@ async def all_tickets(
     date_from: str | None = Query(default=None),
     date_to: str | None = Query(default=None),
     sla_min_pct: float | None = Query(default=None),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=500),
 ):
     return await service.list_all_tickets(
         status=status, priority=priority, assignee_id=assignee_id, search=search,
         tag=tag, date_from=date_from, date_to=date_to, sla_min_pct=sla_min_pct,
+        page=page, page_size=page_size,
     )
 
 

@@ -37,6 +37,7 @@ class Settings:
     sla_check_interval_seconds: int = 30
     lock_janitor_interval_seconds: int = 30
     sla_near_breach_ratio: float = 0.8
+    reassignment_check_interval_seconds: int = 20
 
 
 settings = Settings()

@@ -46,6 +46,7 @@ export default function AppShell() {
     navItems = [
       { to: "/tickets", label: "My Tickets", icon: <Ticket size={18} />, count: count ?? undefined },
       { to: "/tickets/new", label: "New Ticket", icon: <PlusCircle size={18} /> },
+      { to: "/csat", label: "My CSAT", icon: <Star size={18} /> },
     ];
   } else if (user.role === "technician_human" || user.role === "technician_virtual") {
     navItems = [

@@ -4,6 +4,7 @@ import logging
 from common.config import settings
 from common.presence import presence
 from common.ws.manager import manager as ws_manager
+from modules.assignment.service import reassign_offline_tickets
 from modules.locks.service import janitor_sweep
 from modules.sla.job import run_sla_check
 from persistence.db import db
@@ -20,6 +21,17 @@ async def sla_checker_loop(bus):
         except Exception:
             logger.exception("SLA checker iteration failed")
         await asyncio.sleep(settings.sla_check_interval_seconds)
+
+
+async def reassignment_loop(bus):
+    while True:
+        try:
+            moved = await reassign_offline_tickets(bus)
+            if moved:
+                logger.info("Reassignment sweep moved %d ticket(s) off offline technicians", moved)
+        except Exception:
+            logger.exception("Reassignment sweep iteration failed")
+        await asyncio.sleep(settings.reassignment_check_interval_seconds)
 
 
 async def lock_janitor_loop(bus):
@@ -52,4 +64,5 @@ def start_background_jobs(bus) -> list[asyncio.Task]:
         asyncio.create_task(sla_checker_loop(bus)),
         asyncio.create_task(lock_janitor_loop(bus)),
         asyncio.create_task(presence_janitor_loop()),
+        asyncio.create_task(reassignment_loop(bus)),
     ]

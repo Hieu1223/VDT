@@ -53,7 +53,9 @@ async def list_users(
     online: bool | None = None,
     date_from: str | None = None,
     date_to: str | None = None,
-) -> list[dict]:
+    page: int = 1,
+    page_size: int = 20,
+) -> dict:
     query: dict = {}
     if role:
         query["role"] = role
@@ -76,7 +78,9 @@ async def list_users(
     users = [_clean(u) async for u in cursor]
     if online is not None:
         users = [u for u in users if u["online"] == online]
-    return users
+    total = len(users)
+    start = (page - 1) * page_size
+    return {"items": users[start:start + page_size], "total": total, "page": page, "page_size": page_size}
 
 
 async def list_technicians() -> list[dict]:

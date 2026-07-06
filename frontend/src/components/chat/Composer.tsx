@@ -16,20 +16,23 @@ interface Props {
 
 export default function Composer({ ticketId, replyTo, onClearReply, onSend, disabled, disabledReason }: Props) {
   const [content, setContent] = useState("");
-  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [sending, setSending] = useState(false);
 
-  const handleSend = async () => {
-    if (!content.trim() && attachments.length === 0) return;
+  const handleSendText = async () => {
+    if (!content.trim()) return;
     setSending(true);
     try {
-      await onSend(content.trim(), replyTo?.id || null, attachments);
+      await onSend(content.trim(), replyTo?.id || null, []);
       setContent("");
-      setAttachments([]);
       onClearReply();
     } finally {
       setSending(false);
     }
+  };
+
+  const handleSendFiles = async (attachments: Attachment[]) => {
+    await onSend("", replyTo?.id || null, attachments);
+    onClearReply();
   };
 
   return (
@@ -48,13 +51,13 @@ export default function Composer({ ticketId, replyTo, onClearReply, onSend, disa
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                handleSend();
+                handleSendText();
               }
             }}
           />
           <div className="composer-actions">
-            <AttachmentUploader ticketId={ticketId} attachments={attachments} onChange={setAttachments} />
-            <button className="btn btn-primary btn-sm" data-testid="composer-send-button" onClick={handleSend} disabled={sending}>
+            <AttachmentUploader ticketId={ticketId} onSendFiles={handleSendFiles} disabled={sending} />
+            <button className="btn btn-primary btn-sm" data-testid="composer-send-button" onClick={handleSendText} disabled={sending || !content.trim()}>
               <Send size={14} /> Send
             </button>
           </div>

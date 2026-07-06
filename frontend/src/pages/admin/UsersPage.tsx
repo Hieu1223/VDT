@@ -4,15 +4,19 @@ import { usersApi } from "@/api/endpoints";
 import { formatApiError } from "@/api/client";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { Modal } from "@/components/common/Modal";
+import { Pagination } from "@/components/common/Pagination";
 import { exportToCsv } from "@/lib/csv";
 import type { User } from "@/types";
 import "@/pages/admin/Admin.css";
 
 const ROLE_OPTIONS = ["employee", "technician_human", "technician_virtual", "admin"];
 const STATUS_OPTIONS = ["pending_activation", "active", "suspended", "deactivated"];
+const PAGE_SIZE = 20;
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filters, setFilters] = useState({ search: "", role: "", status: "", online: "", date_from: "", date_to: "" });
@@ -21,20 +25,22 @@ export default function UsersPage() {
   const [creating, setCreating] = useState(false);
 
   const load = () => {
-    const params: any = {};
+    const params: any = { page, page_size: PAGE_SIZE };
     if (filters.search) params.search = filters.search;
     if (filters.role) params.role = filters.role;
     if (filters.status) params.status = filters.status;
     if (filters.online) params.online = filters.online === "true";
     if (filters.date_from) params.date_from = filters.date_from;
     if (filters.date_to) params.date_to = filters.date_to;
-    return usersApi.adminList(params).then(({ data }) => setUsers(data));
+    return usersApi.adminList(params).then(({ data }) => { setUsers(data.items); setTotal(data.total); });
   };
 
   useEffect(() => {
     load().finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.role, filters.status, filters.online, filters.date_from, filters.date_to]);
+  }, [page, filters.role, filters.status, filters.online, filters.date_from, filters.date_to]);
+
+  useEffect(() => { setPage(1); }, [filters.role, filters.status, filters.online, filters.date_from, filters.date_to]);
 
   const handleStatusChange = async (userId: string, status: string) => {
     setError("");
@@ -102,7 +108,7 @@ export default function UsersPage() {
           value={filters.search}
           data-testid="users-search-input"
           onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
-          onKeyDown={(e) => e.key === "Enter" && load()}
+          onKeyDown={(e) => e.key === "Enter" && (setPage(1), load())}
         />
         <select className="select" value={filters.role} data-testid="users-role-filter" onChange={(e) => setFilters((f) => ({ ...f, role: e.target.value }))}>
           <option value="">All roles</option>
@@ -119,7 +125,7 @@ export default function UsersPage() {
         </select>
         <input type="date" className="input" data-testid="users-date-from-input" value={filters.date_from} onChange={(e) => setFilters((f) => ({ ...f, date_from: e.target.value }))} />
         <input type="date" className="input" data-testid="users-date-to-input" value={filters.date_to} onChange={(e) => setFilters((f) => ({ ...f, date_to: e.target.value }))} />
-        <button className="btn btn-secondary btn-sm" data-testid="users-search-button" onClick={load}>Search</button>
+        <button className="btn btn-secondary btn-sm" data-testid="users-search-button" onClick={() => { setPage(1); load(); }}>Search</button>
       </div>
 
       {showCreateModal && (
@@ -171,6 +177,7 @@ export default function UsersPage() {
             ))}
           </tbody>
         </table>
+        <Pagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} testId="users-pagination" />
       </div>
     </div>
   );

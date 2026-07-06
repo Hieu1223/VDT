@@ -43,8 +43,10 @@ async def admin_list_users(
     online: bool | None = Query(default=None),
     date_from: str | None = Query(default=None),
     date_to: str | None = Query(default=None),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=200),
 ):
-    return await service.list_users(role=role, status=status, search=search, online=online, date_from=date_from, date_to=date_to)
+    return await service.list_users(role=role, status=status, search=search, online=online, date_from=date_from, date_to=date_to, page=page, page_size=page_size)
 
 
 @router.post("", dependencies=[Depends(require_roles(UserRole.ADMIN.value))])

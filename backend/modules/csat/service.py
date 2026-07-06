@@ -11,14 +11,19 @@ async def list_all_surveys(
     rating_min: int | None = None,
     rating_max: int | None = None,
     technician_id: str | None = None,
+    requester_id: str | None = None,
     date_from: str | None = None,
     date_to: str | None = None,
-) -> list[dict]:
+    page: int = 1,
+    page_size: int = 20,
+) -> dict:
     query: dict = {}
     if status:
         query["status"] = status
     if technician_id:
         query["technician_id"] = technician_id
+    if requester_id:
+        query["requester_id"] = requester_id
     if rating_min is not None or rating_max is not None:
         rating_q: dict = {}
         if rating_min is not None:
@@ -42,7 +47,9 @@ async def list_all_surveys(
         s["ticket_subject"] = ticket.get("subject") if ticket else None
         s["requester_username"] = ticket.get("requester_username") if ticket else None
         results.append(s)
-    return results
+    total = len(results)
+    start = (page - 1) * page_size
+    return {"items": results[start:start + page_size], "total": total, "page": page, "page_size": page_size}
 
 
 async def create_survey_for_ticket(bus, ticket: dict) -> dict | None:

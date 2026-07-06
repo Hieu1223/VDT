@@ -348,12 +348,13 @@ class TestEscalationReassignment:
 
         vtech_id_r = requests.get(f"{API}/users?role=technician_virtual", headers=auth_headers(tokens_module["admin"]))
         target_id = None
-        candidates = [u for u in (vtech_id_r.json() if vtech_id_r.status_code == 200 else []) if u["id"] != assignee_id]
+        vtech_items = vtech_id_r.json().get("items", []) if vtech_id_r.status_code == 200 else []
+        candidates = [u for u in vtech_items if u["id"] != assignee_id]
         if candidates:
             target_id = candidates[0]["id"]
         else:
             tech_r = requests.get(f"{API}/users?role=technician_human", headers=auth_headers(tokens_module["admin"]))
-            candidates = [u for u in tech_r.json() if u["id"] != assignee_id]
+            candidates = [u for u in tech_r.json().get("items", []) if u["id"] != assignee_id]
             target_id = candidates[0]["id"]
 
         approve = requests.post(f"{API}/requests/{request_id}/approve", json={"target_technician_id": target_id, "note": "TEST approved"},

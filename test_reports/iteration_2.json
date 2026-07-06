@@ -1,0 +1,40 @@
+{
+  "summary": "Second testing pass covering the SECOND large feature batch (Gantt Timeline redesign, dual-thumb RangeSlider, simplified admin ticket creation, pagination on 3 admin pages, unassigned queue filter, employee My CSAT page, chat attachment bug fix + messenger-style redesign, offline-reassignment sweep) plus a regression pass on Phase-1 items. Backend: rewrote/replaced the now-outdated test_helpdesk_v2_features.py with a new test_helpdesk_v2_batch2.py (11 tests) covering pagination shapes, unassigned filter, admin-creates-as-self, employee CSAT scoping, and the attachment-only message 422 bug fix - all pass. Fixed one stale assertion in test_helpdesk_e2e.py (old /api/users list shape). Full suite: 38/38 backend tests passing. Frontend (Playwright, admin/employee roles): Gantt week nav (prev/today/next), zoom in/out, legend row-visibility toggle, status filter (bar count changed 42->2 on 'new'), ticket-bar-click navigation to detail page, and Raw Event Log mode toggle all verified working. Unassigned queue row correctly showed 29-30 open tickets (expected since no technician online at test time, per problem statement). Dual-thumb RangeSlider verified on both Admin CSAT and new Employee 'My CSAT' page (/csat) - dragging a thumb updated 'Min: X - Max: Y' label live and filtered the results table (7->6 rows). Admin ticket creation form confirmed to have NO requester/on-behalf-of dropdown; submitted ticket's requester was correctly 'admin' itself. Pagination bars verified working with correct page-changing behavior on Users ('1-20 of 24' -> 'Page 2 of 2') and All Tickets ('1-20 of 42', 'Page 1 of 3'). Chat file-sending bug fix verified: uploading an image via the paperclip immediately sent it as its own message bubble rendering an inline <img> thumbnail (no separate caption/send step), and a .txt file rendered as a downloadable file chip - no console/runtime errors observed during either upload. Offline-reassignment sweep (~20s job) was reviewed via code (assignment/service.py get_available_technicians/reassign_offline_tickets) and matches the spec exactly (online-only eligibility, unassign fallback) but was NOT live end-to-end tested with a real multi-session heartbeat due to time constraints - recommend main agent self-test or have a follow-up pass explicitly log in as tech.human in a kept-open tab for 30-60s and observe reassignment.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Admin Users / All Tickets / CSAT filter bars", "issues": ["Date range filters use the browser's native <input type='date'> picker (mm/dd/yyyy) instead of a shadcn/custom calendar component - carried over from Phase 1, still present in this batch's paginated pages."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_helpdesk_v2_batch2.py", "/app/backend/tests/test_helpdesk_e2e.py", "/app/test_reports/pytest/pytest_full_results.xml"],
+  "action_items": [
+    "Live-test the ~20s reassignment_loop end-to-end (keep a technician tab open with active heartbeat for 30-60s, verify unassigned tickets get picked up, then close that tab and verify eventual fallback to unassigned/another online tech) - not covered in this pass due to time.",
+    "Consider replacing native date <input type='date'> pickers with a consistent custom calendar component across Users/All Tickets/CSAT filter bars for better visual consistency (minor/cosmetic, not blocking)."
+  ],
+  "critical_code_review_comments": [
+    "Gantt Timeline (TimelineCalendar.tsx) implementation is clean: week math, zoom scaling, and legend-toggle filtering all correctly derived from ticket created_at/resolved_at.",
+    "RangeSlider.tsx is a well-built thin wrapper over Radix UI Slider - test-id propagation to root+thumbs is correct.",
+    "CreateTicketRequest schema correctly has no requester_id field at all - server-side simplification is genuine, not just hidden client-side.",
+    "list_all_tickets/list_users/list_all_surveys pagination is implemented as an in-memory slice after full query materialization (not DB-level skip/limit) - fine at current data volumes but will not scale well; flagging as a future perf consideration, not a current bug.",
+    "assignment/service.py reassign_offline_tickets + get_available_technicians correctly enforce 'online-only, no offline fallback' per the new requirement, and unassign_ticket() clears assignee cleanly with a UNASSIGNED event.",
+    "messages/schemas.py model_validator (content OR attachments) correctly fixes the previously reported 422 bug - verified both via pytest and live UI upload with no console errors.",
+    "Old test_helpdesk_v2_features.py was fully obsolete (asserted old un-paginated list shapes and on-behalf-of ticket creation that no longer exists) - deleted and superseded by test_helpdesk_v2_batch2.py."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_helpdesk_v2_batch2.py (new)",
+    "/app/backend/tests/test_helpdesk_e2e.py (fixed stale /api/users list-shape assertion in TestEscalationReassignment)",
+    "/app/backend/tests/test_helpdesk_v2_features.py (deleted - fully superseded/obsolete)"
+  ],
+  "success_rate": {"backend": "100% (38/38 tests passed)", "frontend": "100% of tested flows passed - Gantt (nav/zoom/legend/filters/bar-click/mode-toggle), RangeSlider (admin+employee CSAT), simplified admin ticket creation, pagination (Users/All Tickets/CSAT), unassigned queue filter, My CSAT page, chat attachment bug fix + inline rendering all verified working with no console/runtime errors"},
+  "test_credentials": "admin/Admin@12345, tech.human/Tech@12345, tech.virtual/VTech@12345, employee.demo/Employee@12345 - all confirmed working per /app/memory/test_credentials.md",
+  "seed_data_creation": "Created several TEST_-prefixed tickets via UI/API during this pass (e.g. 'TEST_admin gantt playwright ticket', 'TEST_admin creates as self', 'TEST_chat attachment only') plus one TEST_ prefixed chat attachment message with a real image and txt file upload on an existing employee ticket - left in DB intentionally as it mirrors real usage, main agent can clear before demo if desired.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "This pass focused on Batch 2 (Gantt, RangeSlider, admin ticket creation, pagination, My CSAT, chat fix, reassignment). All items passed except the offline-reassignment live end-to-end flow which was only code-reviewed (matches spec) but not live-tested with real multi-tab heartbeat sessions - a future agent with more time budget should specifically: (1) log in as tech.human in one browser context and keep it open/polling heartbeat, (2) as admin watch All Tickets/Gantt for an unassigned ticket to become assigned to tech.human within ~20s, (3) close that context and after ~60s verify the ticket falls back to unassigned or reassigns to another online tech. Also worth a light regression spot-check of WebSocket real-time notifications and business calendar/priority matrix editor UI (previously passed in iteration_1, not re-clicked through UI this pass, only relied on backend pytest + code review for those particular older Phase-1 items).",
+  "rca_of_the_issue": "N/A - no unresolved bugs found. One false alarm during testing: initial Playwright script queried the CSAT RangeSlider testid element without accounting for the component's default ratingMode='range' state (already showing the slider on page load) vs the state after one toggle click - re-verified with a fresh unclicked page load and confirmed the RangeSlider renders correctly by default with working data-testid on root+both thumbs, and dragging correctly updates filter state and re-queries the table. This was a testing-script sequencing misunderstanding, not an application defect."
+}

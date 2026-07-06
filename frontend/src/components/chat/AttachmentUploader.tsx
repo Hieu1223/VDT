@@ -1,16 +1,20 @@
 import React, { useRef, useState } from "react";
-import { Paperclip, X } from "lucide-react";
+import { Paperclip } from "lucide-react";
 import { messagesApi } from "@/api/endpoints";
 import type { Attachment } from "@/types";
 import "@/components/chat/Chat.css";
 
 interface Props {
   ticketId: string;
-  attachments: Attachment[];
-  onChange: (attachments: Attachment[]) => void;
+  onSendFiles: (attachments: Attachment[]) => Promise<void>;
+  disabled?: boolean;
 }
 
-export default function AttachmentUploader({ ticketId, attachments, onChange }: Props) {
+/** Messenger-style file sharing: picking a file immediately uploads it and
+ * sends it as its own message (no separate "attach, then type, then send"
+ * step). Images/videos render inline in the chat; anything else renders as
+ * a downloadable file chip - see MessageBubble. */
+export default function AttachmentUploader({ ticketId, onSendFiles, disabled }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -23,7 +27,7 @@ export default function AttachmentUploader({ ticketId, attachments, onChange }: 
         const { data } = await messagesApi.upload(ticketId, file);
         uploaded.push(data);
       }
-      onChange([...attachments, ...uploaded]);
+      await onSendFiles(uploaded);
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -45,22 +49,11 @@ export default function AttachmentUploader({ ticketId, attachments, onChange }: 
         className="btn btn-ghost btn-sm"
         data-testid="attachment-upload-trigger-button"
         onClick={() => inputRef.current?.click()}
-        disabled={uploading}
+        disabled={uploading || disabled}
+        title="Send a file"
       >
-        <Paperclip size={16} /> {uploading ? "Uploading..." : "Attach"}
+        <Paperclip size={16} /> {uploading ? "Sending..." : ""}
       </button>
-      {attachments.length > 0 && (
-        <div className="attachment-uploader-list">
-          {attachments.map((a, idx) => (
-            <span key={a.url} className="attachment-chip" data-testid={`attachment-pending-${idx}`}>
-              {a.filename}
-              <button type="button" onClick={() => onChange(attachments.filter((x) => x.url !== a.url))} data-testid={`attachment-remove-${idx}`}>
-                <X size={12} />
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

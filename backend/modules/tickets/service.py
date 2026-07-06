@@ -54,8 +54,7 @@ def sla_elapsed_pct(ticket: dict) -> float | None:
     return max(0.0, (elapsed / window) * 100)
 
 
-async def create_ticket(bus, actor: dict, payload, on_behalf_of: dict | None = None) -> dict:
-    requester = on_behalf_of or actor
+async def create_ticket(bus, actor: dict, payload) -> dict:
     priority = await resolve_priority_from_db(payload.impact, payload.urgency)
     policy = await get_sla_policy(priority)
     calendar = await get_business_calendar()
@@ -70,8 +69,8 @@ async def create_ticket(bus, actor: dict, payload, on_behalf_of: dict | None = N
         "urgency": payload.urgency,
         "priority": priority,
         "status": TicketStatus.NEW.value,
-        "requester_id": requester["id"],
-        "requester_username": requester["username"],
+        "requester_id": actor["id"],
+        "requester_username": actor["username"],
         "assignee_id": None,
         "assignee_username": None,
         "tags": [],
@@ -99,7 +98,7 @@ async def create_ticket(bus, actor: dict, payload, on_behalf_of: dict | None = N
 
     await emit_event(
         bus, EventDomain.TICKET.value, EventType.TICKET_CREATED.value,
-        {"ticket_id": ticket["id"], "subject": ticket["subject"], "priority": priority, "requester_id": requester["id"]},
+        {"ticket_id": ticket["id"], "subject": ticket["subject"], "priority": priority, "requester_id": actor["id"]},
         actor_id=actor["id"], ticket_id=ticket["id"],
     )
     return ticket
@@ -139,14 +138,16 @@ async def list_all_tickets(
     date_from: str | None = None,
     date_to: str | None = None,
     sla_min_pct: float | None = None,
-) -> list[dict]:
+    page: int = 1,
+    page_size: int = 20,
+) -> dict:
     query: dict = {}
     if status:
         query["status"] = status
     if priority:
         query["priority"] = priority
     if assignee_id:
-        query["assignee_id"] = assignee_id
+        query["assignee_id"] = None if assignee_id == "unassigned" else assignee_id
     if search:
         query["subject"] = {"$regex": search, "$options": "i"}
     if tag:
@@ -158,7 +159,9 @@ async def list_all_tickets(
     tickets = [serialize_doc(t) async for t in cursor]
     if sla_min_pct is not None:
         tickets = [t for t in tickets if (pct := sla_elapsed_pct(t)) is not None and pct >= sla_min_pct]
-    return tickets
+    total = len(tickets)
+    start = (page - 1) * page_size
+    return {"items": tickets[start:start + page_size], "total": total, "page": page, "page_size": page_size}
 
 
 async def list_queue(
@@ -196,6 +199,24 @@ async def set_assignee(bus, ticket_id: str, assignee: dict, actor_id: str | None
         bus, EventDomain.TICKET.value, EventType.TICKET_ASSIGNED.value,
         {"ticket_id": ticket_id, "assignee_id": assignee["id"], "assignee_username": assignee["username"]},
         actor_id=actor_id, ticket_id=ticket_id,
+    )
+    return ticket
+
+
+async def unassign_ticket(bus, ticket_id: str, reason: str = "technician_offline") -> dict:
+    """Clears the assignee (e.g. because they went offline with no online
+    replacement available) so the ticket falls back into the unassigned
+    queue - visible to every technician's Queue and filterable on the
+    Admin > All Tickets page."""
+    now = datetime.now(timezone.utc)
+    await db.tickets.update_one(
+        {"id": ticket_id},
+        {"$set": {"assignee_id": None, "assignee_username": None, "updated_at": now}},
+    )
+    ticket = await get_ticket_or_404(ticket_id)
+    await emit_event(
+        bus, EventDomain.TICKET.value, EventType.TICKET_UNASSIGNED.value,
+        {"ticket_id": ticket_id, "reason": reason}, ticket_id=ticket_id,
     )
     return ticket
 

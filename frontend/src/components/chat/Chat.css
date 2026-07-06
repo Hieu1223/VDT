@@ -39,6 +39,9 @@
 .message-bubble-attachments { display: flex; flex-direction: column; gap: var(--space-1); margin-top: var(--space-2); }
 .message-bubble-attachment { display: flex; align-items: center; gap: var(--space-1); font-size: var(--text-xs); color: var(--color-brand-primary); }
 .message-bubble-attachment:hover { text-decoration: underline; }
+.message-bubble-media-link { display: block; }
+.message-bubble-image { max-width: 260px; max-height: 260px; border-radius: var(--radius-sm); display: block; object-fit: cover; }
+.message-bubble-video { max-width: 280px; max-height: 280px; border-radius: var(--radius-sm); display: block; }
 
 .message-bubble-footer { display: flex; align-items: center; justify-content: space-between; margin-top: var(--space-2); gap: var(--space-2); }
 .message-bubble-time { font-size: 11px; color: var(--color-text-muted); }
@@ -75,13 +78,3 @@
 .composer-disabled-note { font-size: var(--text-sm); color: var(--color-text-muted); text-align: center; padding: var(--space-4); }
 
 .attachment-uploader { display: flex; flex-direction: column; gap: var(--space-2); }
-.attachment-uploader-list { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.attachment-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  font-size: var(--text-xs);
-  background: var(--color-bg-surface-hover);
-  border-radius: var(--radius-full);
-  padding: var(--space-1) var(--space-2);
-}
