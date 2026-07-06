@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from common.config import ROOT_DIR, settings
 from common.errors import register_exception_handlers
 from common.event_bus.rabbit_bus import RabbitEventBus
+from common.presence import presence
 from common.security import decode_token
 from common.ws.manager import manager as ws_manager
 from gateway.middleware import setup_cors
@@ -73,6 +74,7 @@ async def ws_endpoint(websocket: WebSocket, token: str):
         return
 
     user_id, role = payload["sub"], payload.get("role", "")
+    presence.touch(user_id)
     await ws_manager.connect(user_id, role, websocket)
     try:
         while True:

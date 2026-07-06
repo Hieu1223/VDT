@@ -9,6 +9,7 @@ class CreateTicketRequest(BaseModel):
     category: str = Field(min_length=1, max_length=60)
     impact: str = Field(description="high, medium, or low")
     urgency: str = Field(description="high, medium, or low")
+    requester_id: Optional[str] = Field(default=None, description="Admin-only: create this ticket on behalf of another user")
 
 
 class ResolveTicketRequest(BaseModel):
@@ -62,3 +63,7 @@ class TicketPublic(BaseModel):
 class UpdateSlaPolicyRequest(BaseModel):
     first_response_minutes: int = Field(gt=0)
     resolve_minutes: int = Field(gt=0)
+
+
+class UpdatePriorityMatrixRequest(BaseModel):
+    priority: str = Field(description="P1, P2, P3, or P4")

@@ -10,7 +10,7 @@ from gateway.deps import get_bus, get_current_user, require_roles
 from modules.escalation.schemas import CreateEscalationRequest, CreateReassignmentRequest
 from modules.escalation import service as escalation_service
 from modules.locks import service as lock_service
-from modules.messages.schemas import SendMessageRequest
+from modules.messages.schemas import EditMessageRequest, SendMessageRequest
 from modules.messages import service as message_service
 from modules.tickets.schemas import RejectTicketRequest, ResolveTicketRequest
 from modules.tickets import service as ticket_service
@@ -41,6 +41,16 @@ async def send_message(ticket_id: str, payload: SendMessageRequest, vtech: dict 
 @router.post("/tickets/{ticket_id}/messages/upload")
 async def upload_attachment(ticket_id: str, file: UploadFile = File(...), vtech: dict = Depends(get_current_user)):
     return await message_service.save_upload(ticket_id, file)
+
+
+@router.patch("/tickets/{ticket_id}/messages/{message_id}")
+async def edit_message(ticket_id: str, message_id: str, payload: EditMessageRequest, vtech: dict = Depends(get_current_user), bus=Depends(get_bus)):
+    return await message_service.edit_message(bus, vtech, ticket_id, message_id, payload.content)
+
+
+@router.delete("/tickets/{ticket_id}/messages/{message_id}")
+async def delete_message(ticket_id: str, message_id: str, vtech: dict = Depends(get_current_user), bus=Depends(get_bus)):
+    return await message_service.delete_message(bus, vtech, ticket_id, message_id)
 
 
 @router.post("/tickets/{ticket_id}/resolve")

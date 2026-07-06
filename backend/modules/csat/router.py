@@ -1,10 +1,26 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
-from gateway.deps import get_bus, get_current_user
+from common.enums import UserRole
+from gateway.deps import get_bus, get_current_user, require_roles
 from modules.csat import service
 from modules.csat.schemas import SubmitCsatRequest
 
 router = APIRouter(prefix="/csat", tags=["csat"])
+
+
+@router.get("", dependencies=[Depends(require_roles(UserRole.ADMIN.value))])
+async def list_all(
+    status: str | None = Query(default=None),
+    rating_min: int | None = Query(default=None),
+    rating_max: int | None = Query(default=None),
+    technician_id: str | None = Query(default=None),
+    date_from: str | None = Query(default=None),
+    date_to: str | None = Query(default=None),
+):
+    return await service.list_all_surveys(
+        status=status, rating_min=rating_min, rating_max=rating_max,
+        technician_id=technician_id, date_from=date_from, date_to=date_to,
+    )
 
 
 @router.get("/{ticket_id}")

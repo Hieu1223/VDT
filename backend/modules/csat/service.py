@@ -6,6 +6,45 @@ from common.events import emit_event
 from persistence.db import db, new_id, serialize_doc
 
 
+async def list_all_surveys(
+    status: str | None = None,
+    rating_min: int | None = None,
+    rating_max: int | None = None,
+    technician_id: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+) -> list[dict]:
+    query: dict = {}
+    if status:
+        query["status"] = status
+    if technician_id:
+        query["technician_id"] = technician_id
+    if rating_min is not None or rating_max is not None:
+        rating_q: dict = {}
+        if rating_min is not None:
+            rating_q["$gte"] = rating_min
+        if rating_max is not None:
+            rating_q["$lte"] = rating_max
+        query["rating"] = rating_q
+    if date_from or date_to:
+        date_q: dict = {}
+        if date_from:
+            date_q["$gte"] = datetime.fromisoformat(date_from)
+        if date_to:
+            date_q["$lte"] = datetime.fromisoformat(date_to)
+        query["created_at"] = date_q
+
+    cursor = db.csat_surveys.find(query).sort("created_at", -1)
+    results = []
+    async for s in cursor:
+        s = serialize_doc(s)
+        ticket = await db.tickets.find_one({"id": s["ticket_id"]}, {"subject": 1, "requester_username": 1})
+        s["ticket_subject"] = ticket.get("subject") if ticket else None
+        s["requester_username"] = ticket.get("requester_username") if ticket else None
+        results.append(s)
+    return results
+
+
 async def create_survey_for_ticket(bus, ticket: dict) -> dict | None:
     if not ticket.get("assignee_id"):
         return None

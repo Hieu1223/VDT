@@ -97,7 +97,6 @@ async def admin_create_user(bus, admin: dict, payload) -> dict:
         "email": payload.email,
         "role": payload.role,
         "status": UserStatus.ACTIVE.value,
-        "online": False,
         "created_at": now,
         "updated_at": now,
         "last_login_at": None,

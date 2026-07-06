@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from modules.assignment.router import router as assignment_router
 from modules.auth.router import router as auth_router
+from modules.calendar.router import router as calendar_router
 from modules.csat.router import router as csat_router
 from modules.escalation.router import router as escalation_router
 from modules.filters.router import router as filters_router
