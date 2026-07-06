@@ -73,14 +73,18 @@ async def list_users(
         if date_to:
             date_query["$lte"] = datetime.fromisoformat(date_to)
         query["created_at"] = date_query
-
-    cursor = db.users.find(query).sort("created_at", -1)
-    users = [_clean(u) async for u in cursor]
     if online is not None:
-        users = [u for u in users if u["online"] == online]
-    total = len(users)
-    start = (page - 1) * page_size
-    return {"items": users[start:start + page_size], "total": total, "page": page, "page_size": page_size}
+        # Presence is in-memory, not a DB field - fold the currently-online
+        # id set straight into the Mongo query so skip/limit still happens
+        # at the DB level instead of materializing every user in memory.
+        online_ids = list(presence.online_ids())
+        query["id"] = {"$in": online_ids} if online else {"$nin": online_ids}
+
+    total = await db.users.count_documents(query)
+    skip = (page - 1) * page_size
+    cursor = db.users.find(query).sort("created_at", -1).skip(skip).limit(page_size)
+    users = [_clean(u) async for u in cursor]
+    return {"items": users, "total": total, "page": page, "page_size": page_size}
 
 
 async def list_technicians() -> list[dict]:

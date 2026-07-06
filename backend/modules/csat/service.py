@@ -39,7 +39,9 @@ async def list_all_surveys(
             date_q["$lte"] = datetime.fromisoformat(date_to)
         query["created_at"] = date_q
 
-    cursor = db.csat_surveys.find(query).sort("created_at", -1)
+    total = await db.csat_surveys.count_documents(query)
+    skip = (page - 1) * page_size
+    cursor = db.csat_surveys.find(query).sort("created_at", -1).skip(skip).limit(page_size)
     results = []
     async for s in cursor:
         s = serialize_doc(s)
@@ -47,9 +49,7 @@ async def list_all_surveys(
         s["ticket_subject"] = ticket.get("subject") if ticket else None
         s["requester_username"] = ticket.get("requester_username") if ticket else None
         results.append(s)
-    total = len(results)
-    start = (page - 1) * page_size
-    return {"items": results[start:start + page_size], "total": total, "page": page, "page_size": page_size}
+    return {"items": results, "total": total, "page": page, "page_size": page_size}
 
 
 async def create_survey_for_ticket(bus, ticket: dict) -> dict | None:

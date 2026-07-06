@@ -179,9 +179,29 @@ list_users` and re-run `add_user`/`set_permissions` as in this session.
   calendar component (not blocking, left as backlog item above).
 
 ## Next action items
-- Consider replacing native `<input type="date">` with a custom calendar
-  component across Admin Users/All Tickets/CSAT filter bars.
-- Consider DB-level skip/limit pagination once ticket/user volume grows
-  meaningfully beyond current in-memory-slice approach.
 - Ask user if virtual technician "full capability parity" needs anything
   beyond current edit/delete message + resolve/reject/escalate/lock set.
+
+## Session 2 continued — DB-level pagination
+Converted the in-memory-slice pagination (from Batch 2) to true MongoDB
+`skip()`/`limit()` + `count_documents()`:
+- `list_users`: `online` filter (in-memory presence set) is now folded
+  directly into the Mongo query as `{"id": {"$in"/"$nin": [...]}}` so
+  skip/limit still runs at the DB level.
+- `list_all_surveys` (CSAT): every filter (status/technician/requester/
+  rating range/date range) is already a stored field - fully DB-level now,
+  including the per-page ticket-subject enrichment lookup (only runs on
+  the current page's rows, not the whole result set).
+- `list_all_tickets`: hybrid - all filters except `sla_min_pct` run at the
+  DB level with skip/limit; `sla_min_pct` is a derived/business-calendar
+  computed value with no stored field, so when it's active the (already
+  DB-narrowed-by-other-filters) match set is materialized and
+  filtered/paginated in Python as a fallback. This is the correct
+  tradeoff - avoids full-collection scans in the common case, only pays
+  the in-memory cost when the advanced SLA%% filter is actually used.
+- Added supporting indexes (`persistence/db.py::create_indexes`):
+  `users.status`, `users.created_at`, `tickets.priority`, `tickets.tags`,
+  `tickets.created_at`, `csat_surveys.requester_id/technician_id/status/created_at`.
+- Verified via curl: ticket/user/CSAT pagination all return distinct pages
+  with correct totals; `online=true/false` filter now DB-level; `sla_min_pct`
+  fallback path still correct.

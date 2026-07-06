@@ -155,10 +155,23 @@ async def list_all_tickets(
     date_query = _build_date_query(date_from, date_to)
     if date_query:
         query["created_at"] = date_query
+
+    if sla_min_pct is None:
+        # No derived/computed filter active - paginate straight at the DB
+        # level (indexed skip/limit) instead of materializing every match.
+        total = await db.tickets.count_documents(query)
+        skip = (page - 1) * page_size
+        cursor = db.tickets.find(query).sort("created_at", -1).skip(skip).limit(page_size)
+        tickets = [serialize_doc(t) async for t in cursor]
+        return {"items": tickets, "total": total, "page": page, "page_size": page_size}
+
+    # sla_min_pct is a derived value (depends on the business calendar and
+    # "now") that isn't stored on the document, so it can't be a Mongo query
+    # operator - materialize just the already-narrowed match set (every
+    # other filter above still ran at the DB level) and paginate in Python.
     cursor = db.tickets.find(query).sort("created_at", -1)
     tickets = [serialize_doc(t) async for t in cursor]
-    if sla_min_pct is not None:
-        tickets = [t for t in tickets if (pct := sla_elapsed_pct(t)) is not None and pct >= sla_min_pct]
+    tickets = [t for t in tickets if (pct := sla_elapsed_pct(t)) is not None and pct >= sla_min_pct]
     total = len(tickets)
     start = (page - 1) * page_size
     return {"items": tickets[start:start + page_size], "total": total, "page": page, "page_size": page_size}
