@@ -1,9 +1,15 @@
 """In-memory WebSocket connection registry, keyed by user id."""
+
+import json
 import logging
-from typing import Dict, Set
+from typing import Any, Dict, Set
 from fastapi import WebSocket
 
 logger = logging.getLogger("ws_manager")
+
+
+def _json_default(obj: Any) -> Any:
+    return obj.isoformat() if hasattr(obj, "isoformat") else str(obj)
 
 
 class ConnectionManager:
@@ -26,10 +32,15 @@ class ConnectionManager:
     def is_online(self, user_id: str) -> bool:
         return bool(self._connections.get(user_id))
 
+    async def _send(self, ws: WebSocket, message: dict) -> None:
+        await ws.send_text(
+            json.dumps(message, ensure_ascii=False, default=_json_default)
+        )
+
     async def send_to_user(self, user_id: str, message: dict) -> None:
         for ws in list(self._connections.get(user_id, [])):
             try:
-                await ws.send_json(message)
+                await self._send(ws, message)
             except Exception:
                 logger.exception("Failed to push WS message to user %s", user_id)
 

@@ -11,6 +11,9 @@ interface NotificationContextValue {
   markAllRead: () => Promise<void>;
   bellShake: boolean;
   ticketEventTick: number;
+  wsError: boolean;
+  retryConnection: () => void;
+  reloadPage: () => void;
 }
 
 const NotificationContext = createContext<NotificationContextValue | undefined>(undefined);
@@ -20,13 +23,17 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [bellShake, setBellShake] = useState(false);
   const [ticketEventTick, setTicketEventTick] = useState(0);
+  const [wsError, setWsError] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const reconnectAttemptsRef = useRef(0);
+  const generationRef = useRef(0);
+  const wsErrorTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     if (!user) {
       setNotifications([]);
+      setWsError(false);
       return;
     }
     notificationsApi.list().then(({ data }) => setNotifications(data)).catch(() => {});
@@ -37,17 +44,38 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     try { ws.close(); } catch { /* ignore */ }
   }, []);
 
+  const retryConnection = useCallback(() => {
+    reconnectAttemptsRef.current = 0;
+    if (wsErrorTimerRef.current) {
+      clearTimeout(wsErrorTimerRef.current);
+      wsErrorTimerRef.current = undefined;
+    }
+    setWsError(false);
+    closeWs(wsRef.current);
+    wsRef.current = null;
+  }, [closeWs, setWsError]);
+
+  const reloadPage = useCallback(() => {
+    window.location.reload();
+  }, []);
+
   useEffect(() => {
     if (!user) return;
-    const token = getAccessToken();
-    if (!token) return;
 
     const connect = () => {
-      const ws = new WebSocket(getWsUrl(token));
+      const currentToken = getAccessToken();
+      if (!currentToken) return;
+      const ws = new WebSocket(getWsUrl(currentToken));
+      const generation = generationRef.current;
       wsRef.current = ws;
 
       ws.onopen = () => {
         reconnectAttemptsRef.current = 0;
+        setWsError(false);
+        if (wsErrorTimerRef.current) {
+          clearTimeout(wsErrorTimerRef.current);
+          wsErrorTimerRef.current = undefined;
+        }
       };
 
       ws.onmessage = (evt) => {
@@ -71,12 +99,17 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
       ws.onclose = () => {
         wsRef.current = null;
-        if (user) {
+        if (generation === generationRef.current && user) {
           const delay = Math.min(1000 * 2 ** reconnectAttemptsRef.current, 30000);
           reconnectAttemptsRef.current += 1;
           reconnectTimerRef.current = setTimeout(() => {
-            if (user) connect();
+            if (generation === generationRef.current && user) connect();
           }, delay);
+          if (!wsErrorTimerRef.current) {
+            wsErrorTimerRef.current = setTimeout(() => {
+              setWsError(true);
+            }, 10000);
+          }
         }
       };
     };
@@ -88,7 +121,12 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         clearTimeout(reconnectTimerRef.current);
         reconnectTimerRef.current = undefined;
       }
+      if (wsErrorTimerRef.current) {
+        clearTimeout(wsErrorTimerRef.current);
+        wsErrorTimerRef.current = undefined;
+      }
       reconnectAttemptsRef.current = 0;
+      generationRef.current += 1;
       closeWs(wsRef.current);
       wsRef.current = null;
     };
@@ -107,8 +145,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const unreadCount = notifications.filter((n) => !n.read_at).length;
 
   const value = useMemo(
-    () => ({ notifications, unreadCount, markRead, markAllRead, bellShake, ticketEventTick }),
-    [notifications, unreadCount, markRead, markAllRead, bellShake, ticketEventTick]
+    () => ({ notifications, unreadCount, markRead, markAllRead, bellShake, ticketEventTick, wsError, retryConnection, reloadPage }),
+    [notifications, unreadCount, markRead, markAllRead, bellShake, ticketEventTick, wsError, retryConnection, reloadPage]
   );
 
   return <NotificationContext.Provider value={value}>{children}</NotificationContext.Provider>;

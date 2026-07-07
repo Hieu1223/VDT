@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
-  LayoutGrid, Ticket, PlusCircle, Settings, Users, Tags, GitBranch, Activity, KanbanSquare, ListTree, Sliders, LogOut, Star,
+  LayoutGrid, Ticket, PlusCircle, Settings, Users, Tags, GitBranch, Activity, KanbanSquare, ListTree, Sliders, LogOut, Star, RefreshCw,
 } from "lucide-react";
 import { escalationApi, ticketsApi } from "@/api/endpoints";
 import { useAuth } from "@/context/AuthContext";
+import { useNotifications } from "@/context/NotificationContext";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import "@/components/layout/AppShell.css";
 
@@ -19,6 +20,7 @@ const OPEN_STATUSES = ["new", "assigned", "in_progress", "escalated"];
 
 export default function AppShell() {
   const { user, logout } = useAuth();
+  const { wsError, retryConnection, reloadPage } = useNotifications();
   const navigate = useNavigate();
   const location = useLocation();
   const [count, setCount] = useState<number | null>(null);
@@ -120,6 +122,17 @@ export default function AppShell() {
             <NotificationBell />
           </div>
         </header>
+        {wsError && (
+          <div className="ws-alert-banner" data-testid="ws-alert-banner">
+            <span className="ws-alert-text">Live notifications are unavailable. You may miss updates.</span>
+            <button className="btn btn-secondary btn-sm" data-testid="ws-alert-retry-button" onClick={retryConnection}>
+              <RefreshCw size={14} /> Try Again
+            </button>
+            <button className="btn btn-primary btn-sm" data-testid="ws-alert-reload-button" onClick={reloadPage}>
+              Reload Page
+            </button>
+          </div>
+        )}
         <main className="app-content">
           <Outlet />
         </main>
