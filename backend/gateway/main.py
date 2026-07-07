@@ -8,6 +8,7 @@ from common.config import ROOT_DIR, settings
 from common.errors import register_exception_handlers
 from common.event_bus.rabbit_bus import RabbitEventBus
 from common.presence import presence
+from common.redis_client import init as redis_init, disconnect as redis_disconnect
 from common.security import decode_token
 from common.ws.manager import manager as ws_manager
 from gateway.middleware import setup_cors
@@ -41,6 +42,7 @@ async def lifespan(app: FastAPI):
     await bus.subscribe("sla.queue", make_sla_consumer())
     await bus.subscribe("escalation.queue", make_escalation_consumer())
 
+    await redis_init()
     app.state.background_tasks = start_background_jobs(bus)
     logger.info("Helpdesk backend startup complete")
 
@@ -49,6 +51,7 @@ async def lifespan(app: FastAPI):
     for task in app.state.background_tasks:
         task.cancel()
     await bus.disconnect()
+    await redis_disconnect()
 
 
 app = FastAPI(title="Helpdesk / ITSM API", lifespan=lifespan)
@@ -81,5 +84,9 @@ async def ws_endpoint(websocket: WebSocket, token: str):
             await websocket.receive_text()
     except WebSocketDisconnect:
         ws_manager.disconnect(user_id, websocket)
+        if not ws_manager.is_online(user_id):
+            await presence.mark_offline(user_id)
     except Exception:
         ws_manager.disconnect(user_id, websocket)
+        if not ws_manager.is_online(user_id):
+            await presence.mark_offline(user_id)

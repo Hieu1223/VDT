@@ -11,11 +11,12 @@ lifecycle management, and an admin monitoring suite.
 | Frontend | React + TypeScript, hand-written CSS (no Tailwind/Bootstrap) |
 | Backend | FastAPI (Python, async) |
 | Database | MongoDB (via `motor`) |
+| Cache / Presence / Locks | Redis 7 |
 | Auth | JWT (PyJWT) + bcrypt |
 | Real-time | Native FastAPI WebSockets |
 | Event Bus | RabbitMQ topic exchange (`aio-pika`) |
 | File storage | Local disk, per-ticket-room folders under `backend/uploads/rooms/{ticket_id}/` |
-| Background jobs | asyncio tasks (SLA checker, lock janitor) |
+| Background jobs | asyncio tasks (SLA checker, lock janitor, presence janitor) |
 | Virtual Technician SDK | `helpdesk-vtech-sdk` (pip-installable) |
 
 > Note: the original design doc specified DuckDB; this environment is
@@ -25,13 +26,13 @@ lifecycle management, and an admin monitoring suite.
 
 ## Local Setup
 
-### 1. RabbitMQ
+### 1. RabbitMQ, MongoDB, Redis
 
 ```bash
-docker compose up -d   # starts RabbitMQ on 5672 (AMQP) / 15672 (management UI)
+docker compose up -d   # starts RabbitMQ (5672/15672), MongoDB (27017), Redis (6379)
 ```
 
-Default credentials: `helpdesk` / `helpdesk`. Management UI: http://localhost:15672
+Default RabbitMQ credentials: `helpdesk` / `helpdesk`. Management UI: http://localhost:15672
 
 ### 2. Backend
 

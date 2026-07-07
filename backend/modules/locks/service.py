@@ -27,8 +27,7 @@ from common.config import settings
 from common.enums import EventDomain, EventType
 from common.errors import ConflictError, ForbiddenError
 from common.events import emit_event
-from common.redis_client import redis_client
-from modules.tickets.service import get_ticket_or_404
+from common.redis_client import get_redis
 
 logger = logging.getLogger("locks")
 
@@ -86,8 +85,7 @@ def _is_active_lock(lock: dict) -> bool:
 
 async def get_lock(ticket_id: str) -> dict:
     """Public helper – returns the lock dict for a ticket (from Redis)."""
-    assert redis_client is not None
-    data = await redis_client.hgetall(_key(ticket_id))
+    data = await get_redis().hgetall(_key(ticket_id))
     return _parse_hash(data) if data else _empty_lock()
 
 
@@ -97,6 +95,7 @@ async def get_lock(ticket_id: str) -> dict:
 
 async def acquire_lock(bus, ticket_id: str, user: dict) -> dict:
     """Acquire (or overwrite) the lock on *ticket_id* for *user*."""
+    from modules.tickets.service import get_ticket_or_404
     await get_ticket_or_404(ticket_id)  # validate existence
 
     existing = await get_lock(ticket_id)
@@ -112,9 +111,8 @@ async def acquire_lock(bus, ticket_id: str, user: dict) -> dict:
         "expires_at": expires,
     }
 
-    assert redis_client is not None
     # HSET + EXPIRE in a pipeline for atomicity
-    async with redis_client.pipeline(transaction=True) as pipe:
+    async with get_redis().pipeline(transaction=True) as pipe:
         pipe.delete(_key(ticket_id))
         pipe.hset(_key(ticket_id), mapping=lock_data)
         pipe.expire(_key(ticket_id), settings.lock_ttl_seconds)
@@ -130,13 +128,13 @@ async def acquire_lock(bus, ticket_id: str, user: dict) -> dict:
 
 async def refresh_lock(bus, ticket_id: str, user: dict) -> dict:
     """Refresh the TTL of a lock held by *user*."""
+    from modules.tickets.service import get_ticket_or_404
     existing = await get_lock(ticket_id)
     if not _is_active_lock(existing) or existing["locked_by"] != user["id"]:
         raise ForbiddenError("You do not hold the lock on this ticket")
 
     new_expires = _expires_at_iso()
-    assert redis_client is not None
-    async with redis_client.pipeline(transaction=True) as pipe:
+    async with get_redis().pipeline(transaction=True) as pipe:
         pipe.hset(_key(ticket_id), "expires_at", new_expires)
         pipe.expire(_key(ticket_id), settings.lock_ttl_seconds)
         await pipe.execute()
@@ -150,14 +148,14 @@ async def refresh_lock(bus, ticket_id: str, user: dict) -> dict:
 
 async def release_lock(bus, ticket_id: str, user: dict, force: bool = False) -> dict:
     """Release a lock (holder or admin force-release)."""
+    from modules.tickets.service import get_ticket_or_404
     existing = await get_lock(ticket_id)
     if not force and existing.get("locked_by") and existing["locked_by"] != user["id"]:
         raise ForbiddenError("You do not hold the lock on this ticket")
 
     was_locked_by = existing.get("locked_by")
 
-    assert redis_client is not None
-    await redis_client.delete(_key(ticket_id))
+    await get_redis().delete(_key(ticket_id))
 
     await emit_event(
         bus, EventDomain.LOCK.value, EventType.LOCK_RELEASED.value,
@@ -178,16 +176,15 @@ async def janitor_sweep(bus) -> int:
 
     Returns the count of locks that were expired and cleaned up.
     """
-    assert redis_client is not None
     count = 0
-    async for key in redis_client.scan_iter(match=f"{_KEY_PREFIX}*", count=500):
-        ttl = await redis_client.ttl(key)
+    async for key in get_redis().scan_iter(match=f"{_KEY_PREFIX}*", count=500):
+        ttl = await get_redis().ttl(key)
         if ttl is not None and ttl <= 0:
             # Key expired but not yet deleted — grab data before we delete
-            data = await redis_client.hgetall(key)
+            data = await get_redis().hgetall(key)
             lock = _parse_hash(data)
             ticket_id = key[len(_KEY_PREFIX):]
-            await redis_client.delete(key)
+            await get_redis().delete(key)
             await emit_event(
                 bus, EventDomain.LOCK.value, EventType.LOCK_EXPIRED.value,
                 {"ticket_id": ticket_id, "was_locked_by": lock.get("locked_by")},

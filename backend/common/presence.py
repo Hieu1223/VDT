@@ -14,7 +14,7 @@ This replaces the previous in-memory dict implementation.
 import logging
 from typing import Iterable
 
-from common.redis_client import redis_client
+from common.redis_client import get_redis
 
 logger = logging.getLogger("presence")
 
@@ -28,27 +28,21 @@ def _key(user_id: str) -> str:
 
 async def _scan_keys() -> list[str]:
     """Return all currently-known presence keys."""
-    assert redis_client is not None, "redis_client not initialised"
     keys: list[str] = []
-    async for k in redis_client.scan_iter(match=f"{_KEY_PREFIX}*", count=500):
+    async for k in get_redis().scan_iter(match=f"{_KEY_PREFIX}*", count=500):
         keys.append(k)
     return keys
 
 
 async def touch(user_id: str) -> bool:
     """Record a heartbeat. Returns True if this is a fresh online transition."""
-    assert redis_client is not None, "redis_client not initialised"
     was_online = await is_online(user_id)
-    # SET with NX would not refresh an existing key's TTL, so we always SET
-    # and rely on the return value of EXPIRE-by-SET to detect transition.
-    # To detect a fresh transition we check `was_online` first (above).
-    await redis_client.set(_key(user_id), "1", ex=PRESENCE_TTL_SECONDS)
+    await get_redis().set(_key(user_id), "1", ex=PRESENCE_TTL_SECONDS)
     return not was_online
 
 
 async def is_online(user_id: str) -> bool:
-    assert redis_client is not None, "redis_client not initialised"
-    return bool(await redis_client.exists(_key(user_id)))
+    return bool(await get_redis().exists(_key(user_id)))
 
 
 async def online_ids() -> set[str]:
@@ -74,8 +68,7 @@ async def sweep_expired() -> set[str]:
 
 async def mark_offline(user_id: str) -> None:
     """Explicit logout - force offline immediately rather than waiting for TTL."""
-    assert redis_client is not None, "redis_client not initialised"
-    await redis_client.delete(_key(user_id))
+    await get_redis().delete(_key(user_id))
 
 
 # ---------------------------------------------------------------------------

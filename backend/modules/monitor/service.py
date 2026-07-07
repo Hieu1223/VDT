@@ -1,5 +1,5 @@
 from common.presence import presence
-from common.redis_client import redis_client
+from common.redis_client import get_redis
 from common.ws.manager import manager as ws_manager
 from persistence.db import db, serialize_doc
 
@@ -29,9 +29,8 @@ async def monitor_tickets() -> dict:
     first_response_breached = await db.tickets.count_documents({"sla.first_response_breached": True})
     resolve_breached = await db.tickets.count_documents({"sla.resolve_breached": True})
     locked = 0
-    if redis_client is not None:
-        async for _ in redis_client.scan_iter(match="lock:*", count=500):
-            locked += 1
+    async for _ in get_redis().scan_iter(match="lock:*", count=500):
+        locked += 1
 
     resolved_count = await db.tickets.count_documents({"status": "resolved"})
     resolved_within_sla = await db.tickets.count_documents({"status": "resolved", "sla.resolve_breached": False})

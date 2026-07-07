@@ -45,7 +45,6 @@ class TicketPublic(BaseModel):
     assignee_username: Optional[str] = None
     tags: list[str] = []
     sla: Optional[SlaBlock] = None
-    lock: Optional[dict] = None
     resolution_note: Optional[str] = None
     rejection_reason: Optional[str] = None
     created_at: datetime
