@@ -31,7 +31,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials | None = De
     user.pop("password_hash", None)
     if user["status"] != UserStatus.ACTIVE.value:
         raise HTTPException(status_code=403, detail=f"Account is {user['status']}")
-    return enrich_online(user)
+    return await enrich_online(user)
 
 
 def require_roles(*roles: str):

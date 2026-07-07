@@ -125,6 +125,8 @@ class NotificationType(str, Enum):
     TICKET_ASSIGNED = "ticket_assigned"
     TICKET_STATUS_CHANGED = "ticket_status_changed"
     NEW_MESSAGE = "new_message"
+    MESSAGE_EDITED = "message_edited"
+    MESSAGE_DELETED = "message_deleted"
     ESCALATION_UPDATE = "escalation_update"
     REASSIGN_UPDATE = "reassign_update"
     SLA_ALERT = "sla_alert"

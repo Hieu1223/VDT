@@ -1,18 +1,82 @@
+"""Redis-backed ticket lock with TTL.
+
+A lock is stored in Redis as a hash  `lock:{ticket_id}` containing:
+    locked_by          – user id of the lock holder
+    locked_by_username – display name
+    locked_at          – ISO timestamp when acquired
+    expires_at         – ISO timestamp when it auto-expires
+
+The *key itself* carries a TTL equal to `settings.lock_ttl_seconds`.
+When a lock is refreshed we re-SET with the same TTL so Redis handles
+expiry natively — no need for a periodic sweep to delete expired locks.
+
+The `janitor_sweep` function scans for locks that have just expired
+(by looking for keys whose remaining TTL is zero or negative) so that
+a LOCK_EXPIRED event can be emitted for downstream consumers.
+
+This replaces the previous approach of storing lock data inside the
+Mongo ticket document.
+"""
+from __future__ import annotations
+
+import json
+import logging
 from datetime import datetime, timedelta, timezone
 
 from common.config import settings
 from common.enums import EventDomain, EventType
 from common.errors import ConflictError, ForbiddenError
 from common.events import emit_event
+from common.redis_client import redis_client
 from modules.tickets.service import get_ticket_or_404
-from persistence.db import db
+
+logger = logging.getLogger("locks")
+
+_KEY_PREFIX = "lock:"
 
 
-def _is_active_lock(ticket: dict) -> bool:
-    lock = ticket.get("lock") or {}
-    if not lock.get("locked_by"):
+def _key(ticket_id: str) -> str:
+    return f"{_KEY_PREFIX}{ticket_id}"
+
+
+# ---------------------------------------------------------------------------
+# Internal helpers
+# ---------------------------------------------------------------------------
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _expires_at_iso() -> str:
+    return (datetime.now(timezone.utc) + timedelta(seconds=settings.lock_ttl_seconds)).isoformat()
+
+
+def _parse_hash(data: dict | None) -> dict:
+    """Normalise a Redis hash (all strings) into a lock dict."""
+    if not data or not data.get("locked_by"):
+        return _empty_lock()
+    return {
+        "locked_by": data["locked_by"],
+        "locked_by_username": data.get("locked_by_username"),
+        "locked_at": data.get("locked_at"),
+        "expires_at": data.get("expires_at"),
+    }
+
+
+def _empty_lock() -> dict:
+    return {
+        "locked_by": None,
+        "locked_by_username": None,
+        "locked_at": None,
+        "expires_at": None,
+    }
+
+
+def _is_active_lock(lock: dict) -> bool:
+    """Check if a parsed lock dict is still active (has owner & not expired)."""
+    if not lock.get("locked_by") or not lock.get("expires_at"):
         return False
-    expires_at = lock.get("expires_at")
+    expires_at = lock["expires_at"]
     if isinstance(expires_at, str):
         expires_at = datetime.fromisoformat(expires_at)
     if expires_at and expires_at.tzinfo is None:
@@ -20,17 +84,42 @@ def _is_active_lock(ticket: dict) -> bool:
     return bool(expires_at and expires_at > datetime.now(timezone.utc))
 
 
-async def acquire_lock(bus, ticket_id: str, user: dict) -> dict:
-    ticket = await get_ticket_or_404(ticket_id)
-    if _is_active_lock(ticket) and ticket["lock"]["locked_by"] != user["id"]:
-        raise ConflictError(f"Ticket is currently locked by {ticket['lock']['locked_by_username']}")
+async def get_lock(ticket_id: str) -> dict:
+    """Public helper – returns the lock dict for a ticket (from Redis)."""
+    assert redis_client is not None
+    data = await redis_client.hgetall(_key(ticket_id))
+    return _parse_hash(data) if data else _empty_lock()
 
-    now = datetime.now(timezone.utc)
-    expires_at = now + timedelta(seconds=settings.lock_ttl_seconds)
-    await db.tickets.update_one(
-        {"id": ticket_id},
-        {"$set": {"lock": {"locked_by": user["id"], "locked_by_username": user["username"], "locked_at": now, "expires_at": expires_at}}},
-    )
+
+# ---------------------------------------------------------------------------
+# Public lock operations
+# ---------------------------------------------------------------------------
+
+async def acquire_lock(bus, ticket_id: str, user: dict) -> dict:
+    """Acquire (or overwrite) the lock on *ticket_id* for *user*."""
+    await get_ticket_or_404(ticket_id)  # validate existence
+
+    existing = await get_lock(ticket_id)
+    if _is_active_lock(existing) and existing["locked_by"] != user["id"]:
+        raise ConflictError(f"Ticket is currently locked by {existing['locked_by_username']}")
+
+    now = _now_iso()
+    expires = _expires_at_iso()
+    lock_data = {
+        "locked_by": user["id"],
+        "locked_by_username": user["username"],
+        "locked_at": now,
+        "expires_at": expires,
+    }
+
+    assert redis_client is not None
+    # HSET + EXPIRE in a pipeline for atomicity
+    async with redis_client.pipeline(transaction=True) as pipe:
+        pipe.delete(_key(ticket_id))
+        pipe.hset(_key(ticket_id), mapping=lock_data)
+        pipe.expire(_key(ticket_id), settings.lock_ttl_seconds)
+        await pipe.execute()
+
     await emit_event(
         bus, EventDomain.LOCK.value, EventType.LOCK_ACQUIRED.value,
         {"ticket_id": ticket_id, "locked_by": user["id"], "locked_by_username": user["username"]},
@@ -40,13 +129,18 @@ async def acquire_lock(bus, ticket_id: str, user: dict) -> dict:
 
 
 async def refresh_lock(bus, ticket_id: str, user: dict) -> dict:
-    ticket = await get_ticket_or_404(ticket_id)
-    if not _is_active_lock(ticket) or ticket["lock"]["locked_by"] != user["id"]:
+    """Refresh the TTL of a lock held by *user*."""
+    existing = await get_lock(ticket_id)
+    if not _is_active_lock(existing) or existing["locked_by"] != user["id"]:
         raise ForbiddenError("You do not hold the lock on this ticket")
 
-    now = datetime.now(timezone.utc)
-    expires_at = now + timedelta(seconds=settings.lock_ttl_seconds)
-    await db.tickets.update_one({"id": ticket_id}, {"$set": {"lock.expires_at": expires_at}})
+    new_expires = _expires_at_iso()
+    assert redis_client is not None
+    async with redis_client.pipeline(transaction=True) as pipe:
+        pipe.hset(_key(ticket_id), "expires_at", new_expires)
+        pipe.expire(_key(ticket_id), settings.lock_ttl_seconds)
+        await pipe.execute()
+
     await emit_event(
         bus, EventDomain.LOCK.value, EventType.LOCK_REFRESHED.value,
         {"ticket_id": ticket_id, "locked_by": user["id"]}, actor_id=user["id"], ticket_id=ticket_id,
@@ -55,36 +149,49 @@ async def refresh_lock(bus, ticket_id: str, user: dict) -> dict:
 
 
 async def release_lock(bus, ticket_id: str, user: dict, force: bool = False) -> dict:
-    ticket = await get_ticket_or_404(ticket_id)
-    lock = ticket.get("lock") or {}
-    if not force and lock.get("locked_by") and lock["locked_by"] != user["id"]:
+    """Release a lock (holder or admin force-release)."""
+    existing = await get_lock(ticket_id)
+    if not force and existing.get("locked_by") and existing["locked_by"] != user["id"]:
         raise ForbiddenError("You do not hold the lock on this ticket")
 
-    await db.tickets.update_one(
-        {"id": ticket_id},
-        {"$set": {"lock": {"locked_by": None, "locked_by_username": None, "locked_at": None, "expires_at": None}}},
-    )
+    was_locked_by = existing.get("locked_by")
+
+    assert redis_client is not None
+    await redis_client.delete(_key(ticket_id))
+
     await emit_event(
         bus, EventDomain.LOCK.value, EventType.LOCK_RELEASED.value,
-        {"ticket_id": ticket_id, "released_by": user["id"], "forced": force, "was_locked_by": lock.get("locked_by")},
+        {"ticket_id": ticket_id, "released_by": user["id"], "forced": force, "was_locked_by": was_locked_by},
         actor_id=user["id"], ticket_id=ticket_id,
     )
     return await get_ticket_or_404(ticket_id)
 
 
 async def janitor_sweep(bus) -> int:
-    """Release any ticket lock whose TTL has expired. Returns count released."""
-    now = datetime.now(timezone.utc)
-    cursor = db.tickets.find({"lock.locked_by": {"$ne": None}, "lock.expires_at": {"$lt": now}})
+    """Scan for lock keys whose TTL has run out and emit LOCK_EXPIRED events.
+
+    Redis auto-deletes keys when their TTL reaches 0, but there is a small
+    window between the TTL reaching 0 and the actual deletion (lazy expiry).
+    We iterate all lock keys and check their remaining TTL — any key whose
+    TTL is None or <= 0 (i.e. already logically expired) is deleted and an
+    event is emitted.
+
+    Returns the count of locks that were expired and cleaned up.
+    """
+    assert redis_client is not None
     count = 0
-    async for ticket in cursor:
-        await db.tickets.update_one(
-            {"id": ticket["id"]},
-            {"$set": {"lock": {"locked_by": None, "locked_by_username": None, "locked_at": None, "expires_at": None}}},
-        )
-        await emit_event(
-            bus, EventDomain.LOCK.value, EventType.LOCK_EXPIRED.value,
-            {"ticket_id": ticket["id"], "was_locked_by": ticket["lock"]["locked_by"]}, ticket_id=ticket["id"],
-        )
-        count += 1
+    async for key in redis_client.scan_iter(match=f"{_KEY_PREFIX}*", count=500):
+        ttl = await redis_client.ttl(key)
+        if ttl is not None and ttl <= 0:
+            # Key expired but not yet deleted — grab data before we delete
+            data = await redis_client.hgetall(key)
+            lock = _parse_hash(data)
+            ticket_id = key[len(_KEY_PREFIX):]
+            await redis_client.delete(key)
+            await emit_event(
+                bus, EventDomain.LOCK.value, EventType.LOCK_EXPIRED.value,
+                {"ticket_id": ticket_id, "was_locked_by": lock.get("locked_by")},
+                ticket_id=ticket_id,
+            )
+            count += 1
     return count

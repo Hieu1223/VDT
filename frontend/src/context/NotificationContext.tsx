@@ -21,6 +21,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const [bellShake, setBellShake] = useState(false);
   const [ticketEventTick, setTicketEventTick] = useState(0);
   const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const reconnectAttemptsRef = useRef(0);
 
   useEffect(() => {
     if (!user) {
@@ -30,34 +32,67 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     notificationsApi.list().then(({ data }) => setNotifications(data)).catch(() => {});
   }, [user]);
 
+  const closeWs = useCallback((ws: WebSocket | null) => {
+    if (!ws) return;
+    try { ws.close(); } catch { /* ignore */ }
+  }, []);
+
   useEffect(() => {
     if (!user) return;
     const token = getAccessToken();
     if (!token) return;
 
-    const ws = new WebSocket(getWsUrl(token));
-    wsRef.current = ws;
+    const connect = () => {
+      const ws = new WebSocket(getWsUrl(token));
+      wsRef.current = ws;
 
-    ws.onmessage = (evt) => {
-      try {
-        const msg = JSON.parse(evt.data);
-        if (msg.kind === "notification") {
-          setNotifications((prev) => [msg.data, ...prev]);
-          setBellShake(true);
-          setTimeout(() => setBellShake(false), 700);
-        } else if (msg.kind === "ticket_event") {
-          setTicketEventTick((t) => t + 1);
+      ws.onopen = () => {
+        reconnectAttemptsRef.current = 0;
+      };
+
+      ws.onmessage = (evt) => {
+        try {
+          const msg = JSON.parse(evt.data);
+          if (msg.kind === "notification") {
+            setNotifications((prev) => [msg.data, ...prev]);
+            setBellShake(true);
+            setTimeout(() => setBellShake(false), 700);
+          } else if (msg.kind === "ticket_event") {
+            setTicketEventTick((t) => t + 1);
+          }
+        } catch {
+          // ignore malformed frames
         }
-      } catch {
-        // ignore malformed frames
-      }
+      };
+
+      ws.onerror = () => {
+        // onclose will fire after onerror; do not reconnect here
+      };
+
+      ws.onclose = () => {
+        wsRef.current = null;
+        if (user) {
+          const delay = Math.min(1000 * 2 ** reconnectAttemptsRef.current, 30000);
+          reconnectAttemptsRef.current += 1;
+          reconnectTimerRef.current = setTimeout(() => {
+            if (user) connect();
+          }, delay);
+        }
+      };
     };
+
+    connect();
 
     return () => {
-      ws.close();
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = undefined;
+      }
+      reconnectAttemptsRef.current = 0;
+      closeWs(wsRef.current);
       wsRef.current = null;
     };
-  }, [user]);
+  }, [user, closeWs]);
 
   const markRead = useCallback(async (id: string) => {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n)));

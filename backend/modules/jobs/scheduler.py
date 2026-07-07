@@ -13,6 +13,10 @@ logger = logging.getLogger("jobs.scheduler")
 
 PRESENCE_SWEEP_INTERVAL_SECONDS = 10
 
+# Module-level snapshot of the last-known-online set, used by the presence
+# janitor to detect who *just* went offline (so we can broadcast once).
+_previous_online_ids: set[str] = set()
+
 
 async def sla_checker_loop(bus):
     while True:
@@ -46,10 +50,18 @@ async def lock_janitor_loop(bus):
 
 
 async def presence_janitor_loop():
+    """Compare the current Redis online set against the previous snapshot and
+    broadcast a `presence: offline` event to admins for anyone who just
+    disappeared.  Redis handles TTL expiry natively; we only need to detect
+    the *transition* for the WS broadcast."""
+    global _previous_online_ids
     while True:
         try:
-            expired = presence.sweep_expired()
-            for user_id in expired:
+            current_online = await presence.online_ids()
+            went_offline = _previous_online_ids - current_online
+            _previous_online_ids = current_online
+
+            for user_id in went_offline:
                 user = await db.users.find_one({"id": user_id}, {"username": 1})
                 await ws_manager.broadcast_to_roles(
                     ["admin"], {"kind": "presence", "data": {"user_id": user_id, "username": user.get("username") if user else None, "online": False}}

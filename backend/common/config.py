@@ -31,6 +31,8 @@ class Settings:
     rabbitmq_url: str = os.environ.get("RABBITMQ_URL", "amqp://helpdesk:helpdesk@localhost:5672/")
     rabbitmq_exchange: str = os.environ.get("RABBITMQ_EXCHANGE", "helpdesk.events")
 
+    redis_url: str = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+
     upload_dir: str = os.environ.get("UPLOAD_DIR", "uploads/rooms")
 
     lock_ttl_seconds: int = 180

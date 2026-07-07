@@ -32,11 +32,11 @@ async def list_algorithms() -> list[str]:
 
 
 async def get_available_technicians(exclude_ids: set[str] | None = None) -> list[dict]:
-    """Only technicians who are currently online (in-memory presence) are
+    """Only technicians who are currently online (Redis-backed presence) are
     eligible for (re)assignment - there is no fallback to offline staff, per
     product requirement. Tickets with no eligible online technician stay
     (or fall back into) the unassigned queue."""
-    online_ids = presence.online_ids() - (exclude_ids or set())
+    online_ids = await presence.online_ids() - (exclude_ids or set())
     if not online_ids:
         return []
     cursor = db.users.find({"role": {"$in": list(TECHNICIAN_ROLES)}, "status": UserStatus.ACTIVE.value, "id": {"$in": list(online_ids)}})
@@ -63,7 +63,7 @@ async def reassign_offline_tickets(bus) -> int:
     online - unassigned (falls back into the unassigned queue)."""
     from common.enums import OPEN_TICKET_STATUSES
 
-    online_ids = presence.online_ids()
+    online_ids = await presence.online_ids()
     config = await get_config()
     algorithm = ALGORITHMS.get(config["active_algorithm"], ALGORITHMS["round_robin"])
     moved = 0

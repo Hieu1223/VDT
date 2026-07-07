@@ -74,7 +74,7 @@ async def ws_endpoint(websocket: WebSocket, token: str):
         return
 
     user_id, role = payload["sub"], payload.get("role", "")
-    presence.touch(user_id)
+    await presence.touch(user_id)
     await ws_manager.connect(user_id, role, websocket)
     try:
         while True:

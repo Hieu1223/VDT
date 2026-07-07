@@ -1,0 +1,18 @@
+{
+    "id": "d5012ba8-6c5f-427d-824b-f5aef633d9e1",
+    "domain": "message",
+    "event_type": "MESSAGE_SENT",
+    "routing_key": "message.MESSAGE_SENT",
+    "payload": {
+        "ticket_id": "df69db6b-d12a-4105-9fce-77d95d6cae21",
+        "message_id": "ce965cba-8071-4ee5-a60a-c1e0eea1f0ce",
+        "sender_id": "9c05af24-5dca-40b8-a47c-df860aec0d4d",
+        "sender_username": "tech.human",
+        "content": "asdasdas",
+        "requester_id": "867ed372-dc6b-414a-86f4-b4e8449e816b",
+        "assignee_id": None
+    },
+    "actor_id": "9c05af24-5dca-40b8-a47c-df860aec0d4d",
+    "ticket_id": "df69db6b-d12a-4105-9fce-77d95d6cae21",
+    "created_at": "2026-07-07T00: 32: 44.869399+00: 00"
+}

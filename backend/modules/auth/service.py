@@ -56,7 +56,7 @@ async def authenticate_user(bus, username: str, password: str) -> dict:
     now = datetime.now(timezone.utc)
     await db.users.update_one({"id": user["id"]}, {"$set": {"last_login_at": now, "updated_at": now}})
     user["last_login_at"] = now
-    presence.touch(user["id"])
+    await presence.touch(user["id"])
 
     await emit_event(
         bus, EventDomain.USER.value, EventType.USER_ONLINE.value,
@@ -66,7 +66,7 @@ async def authenticate_user(bus, username: str, password: str) -> dict:
 
     user = serialize_doc(user)
     user.pop("password_hash")
-    return enrich_online(user)
+    return await enrich_online(user)
 
 
 def issue_tokens(user: dict) -> dict:
@@ -95,12 +95,12 @@ async def refresh_access_token(refresh_token: str) -> dict:
         "access_token": create_access_token(user["id"], user["role"], user["username"]),
         "refresh_token": create_refresh_token(user["id"]),
         "token_type": "bearer",
-        "user": enrich_online(user),
+        "user": await enrich_online(user),
     }
 
 
 async def logout_user(bus, user: dict) -> None:
-    presence.mark_offline(user["id"])
+    await presence.mark_offline(user["id"])
     await emit_event(
         bus, EventDomain.USER.value, EventType.USER_OFFLINE.value,
         {"user_id": user["id"], "username": user["username"]},

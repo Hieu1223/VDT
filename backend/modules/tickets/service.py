@@ -4,6 +4,7 @@ from common.business_calendar import add_business_minutes, get_business_calendar
 from common.enums import EventDomain, EventType, TicketStatus, UserRole
 from common.errors import ForbiddenError, NotFoundError, ConflictError
 from common.events import emit_event
+from modules.locks.service import get_lock
 from modules.tickets.sla_seed import get_sla_policy, resolve_priority_from_db
 from persistence.db import db, new_id, serialize_doc
 
@@ -86,7 +87,6 @@ async def create_ticket(bus, actor: dict, payload) -> dict:
             "first_response_near_breach": False,
             "resolve_near_breach": False,
         },
-        "lock": {"locked_by": None, "locked_by_username": None, "locked_at": None, "expires_at": None},
         "resolution_note": None,
         "rejection_reason": None,
         "created_at": now,
@@ -247,7 +247,8 @@ async def record_first_response(bus, ticket_id: str) -> None:
 
 async def resolve_ticket(bus, technician: dict, ticket_id: str, resolution_note: str) -> dict:
     ticket = await get_ticket_or_404(ticket_id)
-    if ticket["lock"]["locked_by"] and ticket["lock"]["locked_by"] != technician["id"]:
+    lock = await get_lock(ticket_id)
+    if lock["locked_by"] and lock["locked_by"] != technician["id"]:
         raise ConflictError("Ticket is locked by another technician")
     if ticket["status"] in (TicketStatus.RESOLVED.value, TicketStatus.REJECTED.value, TicketStatus.CLOSED.value):
         raise ConflictError("Ticket is already closed")
@@ -267,7 +268,8 @@ async def resolve_ticket(bus, technician: dict, ticket_id: str, resolution_note:
 
 async def reject_ticket(bus, technician: dict, ticket_id: str, rejection_reason: str) -> dict:
     ticket = await get_ticket_or_404(ticket_id)
-    if ticket["lock"]["locked_by"] and ticket["lock"]["locked_by"] != technician["id"]:
+    lock = await get_lock(ticket_id)
+    if lock["locked_by"] and lock["locked_by"] != technician["id"]:
         raise ConflictError("Ticket is locked by another technician")
     if ticket["status"] in (TicketStatus.RESOLVED.value, TicketStatus.REJECTED.value, TicketStatus.CLOSED.value):
         raise ConflictError("Ticket is already closed")

@@ -17,7 +17,12 @@ ADMIN_ASSIGNABLE_STATUS_EVENTS = {
 def _clean(user: dict) -> dict:
     user = serialize_doc(user)
     user.pop("password_hash", None)
-    user["online"] = presence.is_online(user["id"])
+    return user
+
+
+async def _clean_online(user: dict) -> dict:
+    user = _clean(user)
+    user["online"] = await presence.is_online(user["id"])
     return user
 
 
@@ -28,7 +33,7 @@ async def update_profile(user: dict, payload) -> dict:
     updates["updated_at"] = datetime.now(timezone.utc)
     await db.users.update_one({"id": user["id"]}, {"$set": updates})
     fresh = await db.users.find_one({"id": user["id"]})
-    return _clean(fresh)
+    return await _clean_online(fresh)
 
 
 async def change_password(user: dict, payload) -> None:
@@ -43,7 +48,7 @@ async def change_password(user: dict, payload) -> None:
 
 async def heartbeat(user_id: str) -> bool:
     """Records a presence heartbeat. Returns True if the user just came online."""
-    return presence.touch(user_id)
+    return await presence.touch(user_id)
 
 
 async def list_users(
@@ -74,11 +79,10 @@ async def list_users(
             date_query["$lte"] = datetime.fromisoformat(date_to)
         query["created_at"] = date_query
     if online is not None:
-        # Presence is in-memory, not a DB field - fold the currently-online
-        # id set straight into the Mongo query so skip/limit still happens
-        # at the DB level instead of materializing every user in memory.
-        online_ids = list(presence.online_ids())
-        query["id"] = {"$in": online_ids} if online else {"$nin": online_ids}
+        # Presence lives in Redis - fold the currently-online id set into
+        # the Mongo query so skip/limit still happens at the DB level.
+        _online_ids = list(await presence.online_ids())
+        query["id"] = {"$in": _online_ids} if online else {"$nin": _online_ids}
 
     total = await db.users.count_documents(query)
     skip = (page - 1) * page_size
@@ -89,7 +93,7 @@ async def list_users(
 
 async def list_technicians() -> list[dict]:
     cursor = db.users.find({"role": {"$in": list(TECHNICIAN_ROLES)}, "status": UserStatus.ACTIVE.value})
-    return [_clean(u) async for u in cursor]
+    return [await _clean_online(u) async for u in cursor]
 
 
 async def admin_create_user(bus, admin: dict, payload) -> dict:
@@ -117,7 +121,7 @@ async def admin_create_user(bus, admin: dict, payload) -> dict:
         {"user_id": user["id"], "username": user["username"], "role": user["role"], "created_by_admin": admin["id"]},
         actor_id=admin["id"],
     )
-    return _clean(user)
+    return await _clean_online(user)
 
 
 async def update_user_status(bus, admin: dict, user_id: str, new_status: str) -> dict:
@@ -137,4 +141,4 @@ async def update_user_status(bus, admin: dict, user_id: str, new_status: str) ->
         actor_id=admin["id"],
     )
     fresh = await db.users.find_one({"id": user_id})
-    return _clean(fresh)
+    return await _clean_online(fresh)

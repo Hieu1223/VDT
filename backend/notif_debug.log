@@ -1,0 +1,230 @@
+[ticket.TICKET_UNASSIGNED] consume event_type=TICKET_UNASSIGNED
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] send_to_user uid=867ed372-dc6b-414a-86f4-b4e8449e816b kind=new_message
+[message.MESSAGE_SENT] conns=[]
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[lock.LOCK_RELEASED] consume event_type=LOCK_RELEASED
+[lock.LOCK_ACQUIRED] consume event_type=LOCK_ACQUIRED
+[lock.LOCK_RELEASED] consume event_type=LOCK_RELEASED
+[lock.LOCK_ACQUIRED] consume event_type=LOCK_ACQUIRED
+[lock.LOCK_RELEASED] consume event_type=LOCK_RELEASED
+[lock.LOCK_ACQUIRED] consume event_type=LOCK_ACQUIRED
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] send_to_user uid=867ed372-dc6b-414a-86f4-b4e8449e816b kind=new_message
+[message.MESSAGE_SENT] conns=[]
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] send_to_user uid=867ed372-dc6b-414a-86f4-b4e8449e816b kind=new_message
+[message.MESSAGE_SENT] conns=[]
+[user.USER_ONLINE] consume event_type=USER_ONLINE
+[user.USER_ONLINE] consume event_type=USER_ONLINE
+[ticket.TICKET_CREATED] consume event_type=TICKET_CREATED
+[ticket.TICKET_ASSIGNED] consume event_type=TICKET_ASSIGNED
+[ticket.TICKET_ASSIGNED] send_to_user uid=9c05af24-5dca-40b8-a47c-df860aec0d4d kind=ticket_assigned
+[ticket.TICKET_ASSIGNED] conns=['9c05af24-5dca-40b8-a47c-df860aec0d4d']
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] send_to_user uid=867ed372-dc6b-414a-86f4-b4e8449e816b kind=new_message
+[message.MESSAGE_SENT] conns=[]
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[ticket.TICKET_UNASSIGNED] consume event_type=TICKET_UNASSIGNED
+[user.USER_ONLINE] consume event_type=USER_ONLINE
+[user.USER_ONLINE] consume event_type=USER_ONLINE
+[ticket.TICKET_CREATED] consume event_type=TICKET_CREATED
+[ticket.TICKET_ASSIGNED] consume event_type=TICKET_ASSIGNED
+[ticket.TICKET_ASSIGNED] send_to_user uid=9c05af24-5dca-40b8-a47c-df860aec0d4d kind=ticket_assigned
+[ticket.TICKET_ASSIGNED] conns=['9c05af24-5dca-40b8-a47c-df860aec0d4d']
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[ticket.TICKET_UNASSIGNED] consume event_type=TICKET_UNASSIGNED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_ACQUIRED] consume event_type=LOCK_ACQUIRED
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] send_to_user uid=867ed372-dc6b-414a-86f4-b4e8449e816b kind=new_message
+[message.MESSAGE_SENT] conns=[]
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] send_to_user uid=867ed372-dc6b-414a-86f4-b4e8449e816b kind=new_message
+[message.MESSAGE_SENT] conns=[]
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] send_to_user uid=867ed372-dc6b-414a-86f4-b4e8449e816b kind=new_message
+[message.MESSAGE_SENT] conns=[]
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] send_to_user uid=867ed372-dc6b-414a-86f4-b4e8449e816b kind=new_message
+[message.MESSAGE_SENT] conns=[]
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] send_to_user uid=867ed372-dc6b-414a-86f4-b4e8449e816b kind=new_message
+[message.MESSAGE_SENT] conns=[]
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] send_to_user uid=867ed372-dc6b-414a-86f4-b4e8449e816b kind=new_message
+[message.MESSAGE_SENT] conns=[]
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] send_to_user uid=867ed372-dc6b-414a-86f4-b4e8449e816b kind=new_message
+[message.MESSAGE_SENT] conns=[]
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] send_to_user uid=867ed372-dc6b-414a-86f4-b4e8449e816b kind=new_message
+[message.MESSAGE_SENT] conns=[]
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] send_to_user uid=867ed372-dc6b-414a-86f4-b4e8449e816b kind=new_message
+[message.MESSAGE_SENT] conns=[]
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] send_to_user uid=867ed372-dc6b-414a-86f4-b4e8449e816b kind=new_message
+[message.MESSAGE_SENT] conns=[]
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] send_to_user uid=867ed372-dc6b-414a-86f4-b4e8449e816b kind=new_message
+[message.MESSAGE_SENT] conns=[]
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] send_to_user uid=867ed372-dc6b-414a-86f4-b4e8449e816b kind=new_message
+[message.MESSAGE_SENT] conns=[]
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] send_to_user uid=867ed372-dc6b-414a-86f4-b4e8449e816b kind=new_message
+[message.MESSAGE_SENT] conns=[]
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] send_to_user uid=867ed372-dc6b-414a-86f4-b4e8449e816b kind=new_message
+[message.MESSAGE_SENT] conns=[]
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] send_to_user uid=867ed372-dc6b-414a-86f4-b4e8449e816b kind=new_message
+[message.MESSAGE_SENT] conns=[]
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_RELEASED] consume event_type=LOCK_RELEASED
+[lock.LOCK_RELEASED] consume event_type=LOCK_RELEASED
+[lock.LOCK_ACQUIRED] consume event_type=LOCK_ACQUIRED
+[lock.LOCK_ACQUIRED] consume event_type=LOCK_ACQUIRED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_RELEASED] consume event_type=LOCK_RELEASED
+[lock.LOCK_ACQUIRED] consume event_type=LOCK_ACQUIRED
+[lock.LOCK_RELEASED] consume event_type=LOCK_RELEASED
+[lock.LOCK_ACQUIRED] consume event_type=LOCK_ACQUIRED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] send_to_user uid=867ed372-dc6b-414a-86f4-b4e8449e816b kind=new_message
+[message.MESSAGE_SENT] conns=['9c05af24-5dca-40b8-a47c-df860aec0d4d', '867ed372-dc6b-414a-86f4-b4e8449e816b']
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] send_to_user uid=867ed372-dc6b-414a-86f4-b4e8449e816b kind=new_message
+[message.MESSAGE_SENT] conns=['9c05af24-5dca-40b8-a47c-df860aec0d4d', '867ed372-dc6b-414a-86f4-b4e8449e816b']
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] send_to_user uid=867ed372-dc6b-414a-86f4-b4e8449e816b kind=new_message
+[message.MESSAGE_SENT] conns=['9c05af24-5dca-40b8-a47c-df860aec0d4d', '867ed372-dc6b-414a-86f4-b4e8449e816b']
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_REFRESHED] consume event_type=LOCK_REFRESHED
+[lock.LOCK_EXPIRED] consume event_type=LOCK_EXPIRED
+[lock.LOCK_EXPIRED] consume event_type=LOCK_EXPIRED
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] send_to_user uid=867ed372-dc6b-414a-86f4-b4e8449e816b kind=new_message
+[message.MESSAGE_SENT] conns=['9c05af24-5dca-40b8-a47c-df860aec0d4d', '867ed372-dc6b-414a-86f4-b4e8449e816b']
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] consume event_type=MESSAGE_SENT
+[message.MESSAGE_SENT] send_to_user uid=867ed372-dc6b-414a-86f4-b4e8449e816b kind=new_message
+[message.MESSAGE_SENT] conns=['9c05af24-5dca-40b8-a47c-df860aec0d4d', '867ed372-dc6b-414a-86f4-b4e8449e816b']

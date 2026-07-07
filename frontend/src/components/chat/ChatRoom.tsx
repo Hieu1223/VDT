@@ -27,7 +27,7 @@ export default function ChatRoom({ ticketId, canPost, disabledReason }: { ticket
   }, [load]);
 
   useEffect(() => {
-    const relevant = notifications.find((n) => n.type === "new_message" && n.ticket_id === ticketId);
+    const relevant = notifications.find((n) => n.ticket_id === ticketId);
     if (relevant) load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notifications, ticketId]);

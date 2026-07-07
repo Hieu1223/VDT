@@ -101,11 +101,15 @@ async def edit_message(bus, user: dict, ticket_id: str, message_id: str, content
     if message.get("deleted_at"):
         raise ForbiddenError("Cannot edit a deleted message")
 
+    ticket = await get_ticket_or_404(ticket_id)
+
     now = datetime.now(timezone.utc)
     await db.messages.update_one({"id": message_id}, {"$set": {"content": content, "edited_at": now}})
     await emit_event(
         bus, EventDomain.MESSAGE.value, EventType.MESSAGE_EDITED.value,
-        {"ticket_id": ticket_id, "message_id": message_id}, actor_id=user["id"], ticket_id=ticket_id,
+        {"ticket_id": ticket_id, "message_id": message_id,
+         "requester_id": ticket["requester_id"], "assignee_id": ticket.get("assignee_id")},
+        actor_id=user["id"], ticket_id=ticket_id,
     )
     return serialize_doc(await db.messages.find_one({"id": message_id}))
 
@@ -117,10 +121,14 @@ async def delete_message(bus, user: dict, ticket_id: str, message_id: str) -> di
     if message["sender_id"] != user["id"] and user["role"] != UserRole.ADMIN.value:
         raise ForbiddenError("You can only delete your own messages")
 
+    ticket = await get_ticket_or_404(ticket_id)
+
     now = datetime.now(timezone.utc)
     await db.messages.update_one({"id": message_id}, {"$set": {"deleted_at": now, "content": "[deleted]", "attachments": []}})
     await emit_event(
         bus, EventDomain.MESSAGE.value, EventType.MESSAGE_DELETED.value,
-        {"ticket_id": ticket_id, "message_id": message_id}, actor_id=user["id"], ticket_id=ticket_id,
+        {"ticket_id": ticket_id, "message_id": message_id,
+         "requester_id": ticket["requester_id"], "assignee_id": ticket.get("assignee_id")},
+        actor_id=user["id"], ticket_id=ticket_id,
     )
     return serialize_doc(await db.messages.find_one({"id": message_id}))

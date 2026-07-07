@@ -44,6 +44,18 @@ async def build_targets(event: dict) -> list[tuple[str, str, str, str]]:
             if candidate and candidate != sender_id:
                 out.append((candidate, NotificationType.NEW_MESSAGE.value, f"New message from {payload.get('sender_username')}", payload.get("content", "")[:140]))
 
+    elif event_type == "MESSAGE_EDITED":
+        sender_id = payload.get("sender_id")
+        for candidate in (payload.get("requester_id"), payload.get("assignee_id")):
+            if candidate and candidate != sender_id:
+                out.append((candidate, NotificationType.MESSAGE_EDITED.value, f"Message edited by {payload.get('sender_username')}", "A message in this ticket was updated."))
+
+    elif event_type == "MESSAGE_DELETED":
+        sender_id = payload.get("sender_id")
+        for candidate in (payload.get("requester_id"), payload.get("assignee_id")):
+            if candidate and candidate != sender_id:
+                out.append((candidate, NotificationType.MESSAGE_DELETED.value, f"Message deleted by {payload.get('sender_username')}", "A message in this ticket was removed."))
+
     elif event_type in ("ESCALATION_REQUESTED", "REASSIGN_REQUESTED"):
         for admin_id in await _admin_ids():
             out.append((admin_id, NotificationType.ESCALATION_UPDATE.value, "New request awaiting review", payload.get("reason", "")))

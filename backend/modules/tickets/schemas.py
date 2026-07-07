@@ -30,13 +30,6 @@ class SlaBlock(BaseModel):
     resolve_near_breach: bool = False
 
 
-class LockBlock(BaseModel):
-    locked_by: Optional[str] = None
-    locked_by_username: Optional[str] = None
-    locked_at: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
-
-
 class TicketPublic(BaseModel):
     id: str
     subject: str
@@ -52,7 +45,7 @@ class TicketPublic(BaseModel):
     assignee_username: Optional[str] = None
     tags: list[str] = []
     sla: Optional[SlaBlock] = None
-    lock: Optional[LockBlock] = None
+    lock: Optional[dict] = None
     resolution_note: Optional[str] = None
     rejection_reason: Optional[str] = None
     created_at: datetime
