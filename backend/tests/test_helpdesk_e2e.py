@@ -326,10 +326,12 @@ class TestEscalationReassignment:
         # resolve which known credential currently holds the assignment (round_robin
         # cycles across all active technicians, which may include ones created by earlier tests)
         actor_token = None
+        actor_role = None
         for role_key in ("tech", "vtech", "admin"):
             me = requests.get(f"{API}/auth/me", headers=auth_headers(tokens_module[role_key])).json()
             if me["id"] == assignee_id:
                 actor_token = tokens_module[role_key]
+                actor_role = me["role"]
                 break
         if not actor_token:
             pytest.skip(f"Ticket auto-assigned to a technician ({assignee_id}) outside known test credentials; "
@@ -338,38 +340,51 @@ class TestEscalationReassignment:
                            headers=auth_headers(actor_token))
         assert r.status_code == 200, r.text
         ticket = requests.get(f"{API}/tickets/{ticket_id}", headers=auth_headers(actor_token)).json()
-        assert ticket["status"] == "escalated"
+        if actor_role == "technician_virtual":
+            assert ticket["status"] == "assigned"
+            assert ticket["assignee_id"] is not None
+            assert ticket["assignee_id"] != assignee_id
+            assert ticket.get("request_pending") is not True
 
-        pending = requests.get(f"{API}/requests/pending", headers=auth_headers(tokens_module["admin"]))
-        assert pending.status_code == 200
-        matches = [p for p in pending.json() if p["ticket_id"] == ticket_id]
-        assert len(matches) == 1
-        request_id = matches[0]["id"]
-
-        vtech_id_r = requests.get(f"{API}/users?role=technician_virtual", headers=auth_headers(tokens_module["admin"]))
-        target_id = None
-        vtech_items = vtech_id_r.json().get("items", []) if vtech_id_r.status_code == 200 else []
-        candidates = [u for u in vtech_items if u["id"] != assignee_id]
-        if candidates:
-            target_id = candidates[0]["id"]
+            mine = requests.get(f"{API}/requests/mine", headers=auth_headers(actor_token))
+            assert mine.status_code == 200
+            my_req = [m for m in mine.json() if m["ticket_id"] == ticket_id]
+            assert len(my_req) == 1
+            assert my_req[0]["status"] == "approved"
         else:
-            tech_r = requests.get(f"{API}/users?role=technician_human", headers=auth_headers(tokens_module["admin"]))
-            candidates = [u for u in tech_r.json().get("items", []) if u["id"] != assignee_id]
-            target_id = candidates[0]["id"]
+            assert ticket["status"] != "escalated"
+            assert ticket.get("request_pending") is True
 
-        approve = requests.post(f"{API}/requests/{request_id}/approve", json={"target_technician_id": target_id, "note": "TEST approved"},
-                                 headers=auth_headers(tokens_module["admin"]))
-        assert approve.status_code == 200, approve.text
+            pending = requests.get(f"{API}/requests/pending", headers=auth_headers(tokens_module["admin"]))
+            assert pending.status_code == 200
+            matches = [p for p in pending.json() if p["ticket_id"] == ticket_id]
+            assert len(matches) == 1
+            request_id = matches[0]["id"]
 
-        ticket2 = requests.get(f"{API}/tickets/{ticket_id}", headers=auth_headers(tokens_module["admin"])).json()
-        assert ticket2["status"] == "assigned"
-        assert ticket2["assignee_id"] == target_id
+            vtech_id_r = requests.get(f"{API}/users?role=technician_virtual", headers=auth_headers(tokens_module["admin"]))
+            target_id = None
+            vtech_items = vtech_id_r.json().get("items", []) if vtech_id_r.status_code == 200 else []
+            candidates = [u for u in vtech_items if u["id"] != assignee_id]
+            if candidates:
+                target_id = candidates[0]["id"]
+            else:
+                tech_r = requests.get(f"{API}/users?role=technician_human", headers=auth_headers(tokens_module["admin"]))
+                candidates = [u for u in tech_r.json().get("items", []) if u["id"] != assignee_id]
+                target_id = candidates[0]["id"]
 
-        mine = requests.get(f"{API}/requests/mine", headers=auth_headers(actor_token))
-        assert mine.status_code == 200
-        my_req = [m for m in mine.json() if m["id"] == request_id]
-        assert len(my_req) == 1
-        assert my_req[0]["status"] == "approved"
+            approve = requests.post(f"{API}/requests/{request_id}/approve", json={"target_technician_id": target_id, "note": "TEST approved"},
+                                     headers=auth_headers(tokens_module["admin"]))
+            assert approve.status_code == 200, approve.text
+
+            ticket2 = requests.get(f"{API}/tickets/{ticket_id}", headers=auth_headers(tokens_module["admin"])).json()
+            assert ticket2["status"] == "assigned"
+            assert ticket2["assignee_id"] == target_id
+
+            mine = requests.get(f"{API}/requests/mine", headers=auth_headers(actor_token))
+            assert mine.status_code == 200
+            my_req = [m for m in mine.json() if m["id"] == request_id]
+            assert len(my_req) == 1
+            assert my_req[0]["status"] == "approved"
 
 
 class TestAdminConfigKanbanTimelineMonitor:

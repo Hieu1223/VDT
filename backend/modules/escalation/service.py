@@ -1,8 +1,11 @@
 from datetime import datetime, timezone
 
-from common.enums import EventDomain, EventType, RequestStatus, RequestType, TicketStatus
+from common.enums import EventDomain, EventType, RequestStatus, RequestType, TicketStatus, UserRole, UserStatus
 from common.errors import ConflictError, ForbiddenError, NotFoundError
 from common.events import emit_event
+from common.presence import presence
+from modules.assignment.algorithms import ALGORITHMS
+from modules.assignment.service import get_config
 from modules.tickets.service import get_ticket_or_404, set_assignee
 from persistence.db import db, new_id, serialize_doc
 
@@ -22,6 +25,21 @@ EVENT_MAP = {
         "returned": EventType.REASSIGN_RETURNED.value,
     },
 }
+
+
+async def _pick_online_human_technician(exclude_ids: set[str] | None = None) -> dict | None:
+    config = await get_config()
+    algorithm = ALGORITHMS.get(config.get("active_algorithm", "round_robin"), ALGORITHMS["round_robin"])
+    online_ids = await presence.online_ids() - (exclude_ids or set())
+    if not online_ids:
+        return None
+    cursor = db.users.find({
+        "role": UserRole.TECHNICIAN_HUMAN.value,
+        "status": UserStatus.ACTIVE.value,
+        "id": {"$in": list(online_ids)},
+    })
+    candidates = [t async for t in cursor]
+    return await algorithm(candidates, config)
 
 
 async def _create_request(bus, req_type: RequestType, technician: dict, ticket_id: str, reason: str, target_technician_id: str | None) -> dict:
@@ -51,10 +69,26 @@ async def _create_request(bus, req_type: RequestType, technician: dict, ticket_i
     await db.requests.insert_one(doc)
 
     updates = {"request_pending": True, "updated_at": now}
-    if req_type == RequestType.ESCALATION:
+    auto_assigned_human = None
+    if req_type == RequestType.ESCALATION and technician["role"] == UserRole.TECHNICIAN_VIRTUAL.value:
+        auto_assigned_human = await _pick_online_human_technician(exclude_ids={technician["id"]})
+        if auto_assigned_human:
+            updates["status"] = TicketStatus.ASSIGNED.value
+            updates["previous_status"] = None
+            updates["request_pending"] = False
+            updates["assignee_id"] = auto_assigned_human["id"]
+            updates["assignee_username"] = auto_assigned_human["username"]
+        else:
+            updates["previous_status"] = ticket["status"]
+    elif req_type == RequestType.ESCALATION:
         updates["previous_status"] = ticket["status"]
-        updates["status"] = TicketStatus.ESCALATED.value
     await db.tickets.update_one({"id": ticket_id}, {"$set": updates})
+
+    if req_type == RequestType.ESCALATION and technician["role"] == UserRole.TECHNICIAN_VIRTUAL.value:
+        await db.requests.update_one(
+            {"id": request["id"]},
+            {"$set": {"status": RequestStatus.APPROVED.value, "reviewed_by": auto_assigned_human["id"] if auto_assigned_human else None, "review_note": "Auto-escalated to queue", "reviewed_at": now, "target_technician_id": auto_assigned_human["id"] if auto_assigned_human else None}},
+        )
 
     events = EVENT_MAP[req_type]
     await emit_event(
