@@ -33,6 +33,8 @@ export default function QueuePage() {
 
   useEffect(() => {
     load();
+    const interval = setInterval(load, 15000);
+    return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.tag, filters.date_from, filters.date_to, filters.sla_min_pct]);
 

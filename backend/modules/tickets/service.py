@@ -98,7 +98,7 @@ async def create_ticket(bus, actor: dict, payload) -> dict:
 
     await emit_event(
         bus, EventDomain.TICKET.value, EventType.TICKET_CREATED.value,
-        {"ticket_id": ticket["id"], "subject": ticket["subject"], "priority": priority, "requester_id": actor["id"]},
+        {"ticket_id": ticket["id"], "subject": ticket["subject"], "priority": priority, "requester_id": actor["id"], "requester_username": actor["username"]},
         actor_id=actor["id"], ticket_id=ticket["id"],
     )
     return ticket
